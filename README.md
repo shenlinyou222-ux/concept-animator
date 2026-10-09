@@ -350,7 +350,11 @@ OK
 ### 5.1 明确的缺陷
 
 1. **`python -m concept_animator.cli` 在原目录名下一次都跑不了。**（§1.1）
-   这是最影响"clone 下来就能跑"体验的一条。修法只需要重命名目录，但当前状态是坏的。
+   这是最影响"clone 下来就能跑"体验的一条。修法只需要重命名目录（或在父目录建一个
+   下划线软链），但当前状态是坏的——**任何人按 README 复制粘贴都会在第一步失败**。
+   （对比：同一批作品集里的 `rogue-dshrl` 我实测过，干净克隆后命令行直接可用；
+   `godot-avatar-skeleton` 需要先让 Godot 扫描一次项目。三个仓库里只有这个是这样
+   "文档给的命令一定失败"的硬故障。）
 2. **`output/` 里的 HTML 是旧模板渲染的，和当前代码不一致。** 我重渲染后逐项比对：
    `output/demo.html`（31,777 B）缺少测试断言要求的 `child-box.entity` / `child-box.abstract`
    类名与 `history.replaceState`，而同一棵树重渲染得到 42,364 B 的新版本。
