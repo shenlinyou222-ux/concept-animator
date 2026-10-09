@@ -21,3 +21,8 @@ Thumbs.db
 # 生成物的中间态（保留 output/ 作为成品展示）
 *.bak
 *.tmp
+
+# Manim 渲染中间产物：partial_movie_files 里是分片 mp4 和
+# 一份写死了本机绝对路径的 partial_movie_file_list.txt，
+# 只对本机当次渲染有效，重渲染会自动重建。成品是同级目录下的 <Scene>.mp4。
+media/videos/**/partial_movie_files/

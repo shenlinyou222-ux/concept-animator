@@ -324,14 +324,18 @@ concept-animator/
 
 ### `media/` 里到底有什么
 
-102 个文件，约 2.41 MB。这是 **Manim CE 的渲染中间产物和成品**，不是本工具自己生成的：
+60 个文件，约 1.49 MB。这是 **Manim CE 的渲染中间产物和成品**，不是本工具自己生成的：
 
 | 子目录 | 内容 |
 |---|---|
-| `media/videos/manim_scene/480p15/` | `SectionSigma.mp4`（370,893 B）、`LoadFactor.mp4`（139,458 B）+ 分片 |
-| `media/videos/manim_scene2/480p15/` | `HashProbe.mp4`（220,239 B）、`MeshVsRaymarch.mp4`（203,291 B）+ 分片 |
+| `media/videos/manim_scene/480p15/` | `SectionSigma.mp4`（370,893 B）、`LoadFactor.mp4`（139,458 B） |
+| `media/videos/manim_scene2/480p15/` | `HashProbe.mp4`（220,239 B）、`MeshVsRaymarch.mp4`（203,291 B） |
 | `media/Tex/` | MathTex 的 `.tex` / `.svg` / `.aux` / `.log`（LaTeX 编译缓存） |
 | `media/texts/` | Manim `Text` 对象转出的 `.svg`（43 个） |
+
+> `partial_movie_files/`（分片 mp4 + `partial_movie_file_list.txt`）**不入库**：
+> 它是 Manim 当次渲染的中间态，清单文件里写的是渲染机上的绝对路径，
+> 对读者没有意义且会泄露本机目录结构。已在 `.gitignore` 中排除，重渲染会自动重建。
 
 `media/` 里的 4 个 mp4 正是 `hopsoncraft_v2.json` 里 4 个 `video` 块引用的文件
 （路径形如 `media/videos/manim_scene/480p15/SectionSigma.mp4`），
