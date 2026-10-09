@@ -15,9 +15,7 @@
     --current-text: #000000;
     --orange-fill: #ff8c00;
     --orange-text: #000000;
-    --set-edge: #7fd6ff;
     --temporal-edge: #ff8c00;
-    --spatial-edge: #d78cff;
     --font: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
   }
 
@@ -160,6 +158,19 @@
   .node-pill.ancestor.group-start {
     margin-left: auto;
   }
+  .node-pill.entity {
+    border-style: solid;
+  }
+  .node-pill.abstract {
+    border-style: dashed;
+  }
+  .node-pill.clickable {
+    cursor: pointer;
+  }
+  .node-pill.clickable:hover {
+    border-color: #ddd;
+    color: #fff;
+  }
   .node-pill.hidden {
     display: none;
   }
@@ -177,7 +188,7 @@
   }
 
   .lecture {
-    flex: 0 0 360px;
+    flex: 0 0 440px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -241,6 +252,100 @@
     margin-bottom: 2px;
   }
 
+  /* ---------- typed expression blocks ---------- */
+  .blocks { display: flex; flex-direction: column; gap: 10px; }
+  .block {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: slideIn .5s ease forwards;
+  }
+  .block.formula {
+    font-family: "Cambria Math", "STIX Two Math", Georgia, serif;
+    font-size: 19px;
+    text-align: center;
+    background: #0c0c0c;
+    border: 1px solid #333;
+  }
+  .block.formula .caption {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+  }
+  .block.analogy { background: #101418; border-left: 3px solid #4da3ff; color: #cfe3ff; }
+  .block.example { background: #141210; border-left: 3px solid #ffd24d; color: #ffeec2; }
+  .block.example .title { font-weight: 700; color: #ffd24d; margin-bottom: 4px; font-size: 13px; }
+  .block.quote { background: #0a0f0a; border-left: 3px solid #57d98a; color: #d2f5e0; font-style: italic; }
+  .block.quote .source { font-style: normal; font-size: 11px; color: #57d98a; margin-top: 6px; text-align: right; }
+  .block.callout { border: 1px dashed #ff8c00; color: #ffce85; background: #141005; }
+  .block.callout.tone-warn { border-color: #ff4d4d; color: #ffb3b3; background: #140505; }
+  .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+  .steps li {
+    display: flex; gap: 10px; align-items: flex-start;
+    opacity: 0; transform: translateX(-12px);
+    animation: slideIn .45s ease forwards;
+    background: #0d0d0d; border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    flex: 0 0 22px; height: 22px; border-radius: 50%;
+    background: var(--orange-fill); color: #000;
+    font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  table.block-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .block-table th { background: #1c1c1c; }
+  .block-table th, .block-table td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+  .block.chart-block { background: #0b0b0b; border: 1px solid #262626; }
+  .block.chart-block .chart-title { font-size: 12px; color: #bbb; margin-bottom: 6px; }
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .bar-rect { transform: scaleY(0); transform-origin: bottom; animation: growUp .8s ease forwards; }
+  @keyframes growUp { to { transform: scaleY(1); } }
+  .line-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.2s ease forwards; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .block.quiz { background: #0d0d14; border: 1px solid #3a3a5a; }
+  table.symtab { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .symtab th { color: #888; font-weight: 400; text-align: left; padding: 2px 6px; border-bottom: 1px dashed #333; font-size: 11px; }
+  .symtab td { padding: 3px 6px; border-bottom: 1px solid #1c1c1c; vertical-align: top; color: #ccc; }
+  .symtab td.sym { font-family: "Cambria Math", Georgia, serif; color: #ffce85; white-space: nowrap; font-size: 14px; }
+  .symtab td.kind { color: #4da3ff; white-space: nowrap; }
+  .block.formula .caption { margin-bottom: 0; }
+  .block-video { width: 100%; max-height: 380px; border-radius: 6px; background: #000; display: block; }
+  .block.quiz .q { color: #c9c9ff; }
+  .block.quiz button {
+    margin-top: 8px; background: #222244; color: #fff;
+    border: 1px solid #556; border-radius: 6px;
+    padding: 5px 10px; cursor: pointer; font-size: 12px;
+  }
+  .block.quiz .hint { font-size: 12px; color: #888; margin-top: 4px; }
+  .block.quiz .answer { display: none; margin-top: 8px; color: #9fd89f; border-top: 1px dashed #333; padding-top: 8px; }
+  .block.quiz.revealed .answer { display: block; animation: fadeIn .4s ease; }
+  .block.quiz.revealed button { display: none; }
+
+  .mathcol {
+    flex: 0 0 300px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .mathcol .mtitle {
+    font-size: 11px;
+    letter-spacing: .5px;
+    color: #888;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #262626;
+    flex: 0 0 auto;
+  }
+  .mathcol .block.formula { font-size: 16px; text-align: left; }
   .diagram-wrap {
     flex: 1;
     min-width: 0;
@@ -292,6 +397,17 @@
     border-radius: 8px;
     text-align: center;
     font-size: 13px;
+    cursor: pointer;
+  }
+  .child-box.entity {
+    border-style: solid;
+  }
+  .child-box.abstract {
+    border-style: dashed;
+  }
+  .child-box:hover {
+    border-color: #ccc;
+    color: #fff;
   }
   .child-box .type-tag {
     display: block;
@@ -315,9 +431,6 @@
   }
   .edge-label.temporal {
     fill: var(--temporal-edge);
-  }
-  .edge-label.spatial {
-    fill: var(--spatial-edge);
   }
   .external-node {
     fill: #181818;
@@ -352,8 +465,9 @@
       <div class="ancestor-row" id="ancestorRow"></div>
       <div class="main-content" id="mainContent">
         <div class="lecture" id="lecture"></div>
+        <div class="mathcol" id="mathcol"></div>
         <div class="diagram-wrap">
-          <svg id="diagram" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="diagram" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
       </div>
     </section>
@@ -368,11 +482,12 @@
 <script>
 "use strict";
 
-const TREE = {"id": "机器学习-root", "name": "机器学习", "summary": "让计算机从数据中自动学习规律，而不是由人显式编写全部规则。", "explanation": ["机器学习是让计算机从数据中自动学习规律，而不是由人显式编写所有规则。", "它通常包含数据准备、特征工程、模型训练和评估四个阶段。", "核心对象是数据集、模型、损失函数和优化算法。"], "is_primitive": false, "primitive_kind": null, "contrast": ["传统编程", "显式规则系统"], "set_relations": [{"subject": "机器学习", "relation": "superset_of", "object": "数据集", "note": "机器学习以数据集为输入素材"}, {"subject": "机器学习", "relation": "superset_of", "object": "特征工程", "note": "特征工程是机器学习流程的一部分"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型训练", "note": "模型训练是机器学习的核心阶段"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型评估", "note": "模型评估是机器学习流程的一部分"}, {"subject": "模型训练", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}, {"subject": "模型评估", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}, {"subject": "数据集", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}, {"subject": "特征工程", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}], "temporal_relations": [{"before": "特征工程", "after": "模型训练", "kind": "before", "note": "特征工程先于模型训练"}, {"before": "模型训练", "after": "模型评估", "kind": "before", "note": "模型训练得到模型后再评估"}, {"before": "特征工程", "after": "模型评估", "kind": "before", "note": "由时间先后关系传递推导"}], "spatial_relations": [], "children": [{"id": "数据集-leaf", "name": "数据集", "summary": "由样本组成的集合，每个样本可表示为向量或矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "特征工程-node", "name": "特征工程", "summary": "把原始数据转换成适合模型学习的特征向量。", "explanation": ["特征工程把原始数据转换成适合模型学习的数值特征。", "常见操作是构造特征向量、处理缺失值、标准化。"], "is_primitive": false, "primitive_kind": null, "contrast": ["手工特征"], "set_relations": [{"subject": "特征向量", "relation": "element_of", "object": "实数向量空间", "note": "特征向量是实数向量空间的元素"}], "temporal_relations": [{"before": "缺失值处理", "after": "标准化", "kind": "before", "note": "先处理缺失值再标准化"}], "spatial_relations": [], "children": [{"id": "特征向量-leaf", "name": "特征向量", "summary": "n 维实数向量，是模型输入的基本数学对象。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "缺失值处理-leaf", "name": "缺失值处理", "summary": "对数据集中空值进行删除或填充，属于集合清洗操作。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "标准化-leaf", "name": "标准化", "summary": "将特征缩放到均值为 0、方差为 1 的实数区间。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型训练-node", "name": "模型训练", "summary": "通过优化损失函数调整模型参数，使预测误差最小。", "explanation": ["模型训练通过前向传播计算预测，再根据损失函数计算误差。", "梯度下降算法迭代更新参数，逐步降低损失。"], "is_primitive": false, "primitive_kind": null, "contrast": ["推理/预测"], "set_relations": [{"subject": "模型", "relation": "element_of", "object": "函数空间", "note": "模型可看作一个函数"}, {"subject": "损失函数", "relation": "element_of", "object": "函数空间", "note": "损失函数也是函数空间中的元素"}, {"subject": "梯度下降", "relation": "element_of", "object": "优化算法集合", "note": "梯度下降属于迭代优化算法集合"}], "temporal_relations": [{"before": "前向传播", "after": "损失计算", "kind": "before", "note": "先前向传播再计算损失"}, {"before": "损失计算", "after": "梯度计算", "kind": "before", "note": "损失计算后反向传播求梯度"}, {"before": "梯度计算", "after": "参数更新", "kind": "before", "note": "得到梯度后更新参数"}, {"before": "前向传播", "after": "参数更新", "kind": "before", "note": "由时间先后关系传递推导"}, {"before": "前向传播", "after": "梯度计算", "kind": "before", "note": "由时间先后关系传递推导"}, {"before": "损失计算", "after": "参数更新", "kind": "before", "note": "由时间先后关系传递推导"}], "spatial_relations": [], "children": [{"id": "模型-leaf", "name": "模型", "summary": "可看作函数 f(x;θ)，将输入向量映射到输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失函数-leaf", "name": "损失函数", "summary": "评价预测值与真实值差距的数学函数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "前向传播-leaf", "name": "前向传播", "summary": "按网络结构逐层计算输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失计算-leaf", "name": "损失计算", "summary": "将预测与标签代入损失函数得到标量误差。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度计算-leaf", "name": "梯度计算", "summary": "计算损失关于参数的导数/偏导数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "参数更新-leaf", "name": "参数更新", "summary": "用 θ ← θ - η·grad 更新参数向量。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度下降-leaf", "name": "梯度下降", "summary": "一种迭代优化算法，沿负梯度方向更新参数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": ["随机梯度下降"], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型评估-node", "name": "模型评估", "summary": "在未见过的测试集上衡量模型泛化能力。", "explanation": ["模型评估使用测试集计算准确率等指标。", "混淆矩阵可以细看每一类别的预测情况。"], "is_primitive": false, "primitive_kind": null, "contrast": ["训练集表现"], "set_relations": [{"subject": "测试集", "relation": "subset_of", "object": "完整数据集", "note": "测试集是从完整数据中划分出的子集"}, {"subject": "准确率", "relation": "element_of", "object": "实数", "note": "准确率是一个 0 到 1 之间的实数"}], "temporal_relations": [{"before": "模型训练", "after": "测试集评估", "kind": "before", "note": "训练完成后才做评估"}], "spatial_relations": [], "children": [{"id": "测试集-leaf", "name": "测试集", "summary": "独立于训练集的样本子集。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "准确率-leaf", "name": "准确率", "summary": "正确预测数 / 样本总数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "混淆矩阵-leaf", "name": "混淆矩阵", "summary": "行表示真实类别、列表示预测类别的计数矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
+const TREE = {"id": "机器学习-root", "name": "机器学习", "summary": "让计算机从数据中自动学习规律，而不是由人显式编写全部规则。", "explanation": ["机器学习是让计算机从数据中自动学习规律，而不是由人显式编写所有规则。", "它通常包含数据准备、特征工程、模型训练和评估四个阶段。", "核心对象是数据集、模型、损失函数和优化算法。"], "is_primitive": false, "primitive_kind": null, "contrast": ["传统编程", "显式规则系统"], "blocks": [], "set_relations": [{"subject": "机器学习", "relation": "superset_of", "object": "数据集", "note": "机器学习以数据集为输入素材"}, {"subject": "机器学习", "relation": "superset_of", "object": "特征工程", "note": "特征工程是机器学习流程的一部分"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型训练", "note": "模型训练是机器学习的核心阶段"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型评估", "note": "模型评估是机器学习流程的一部分"}, {"subject": "模型训练", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}, {"subject": "模型评估", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}, {"subject": "数据集", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}, {"subject": "特征工程", "relation": "subset_of", "object": "机器学习", "note": "由 superset_of 反向后传递推导"}], "temporal_relations": [{"before": "特征工程", "after": "模型训练", "kind": "before", "note": "特征工程先于模型训练"}, {"before": "模型训练", "after": "模型评估", "kind": "before", "note": "模型训练得到模型后再评估"}, {"before": "特征工程", "after": "模型评估", "kind": "before", "note": "由时间先后关系传递推导"}], "spatial_relations": [], "children": [{"id": "数据集-leaf", "name": "数据集", "summary": "由样本组成的集合，每个样本可表示为向量或矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "特征工程-node", "name": "特征工程", "summary": "把原始数据转换成适合模型学习的特征向量。", "explanation": ["特征工程把原始数据转换成适合模型学习的数值特征。", "常见操作是构造特征向量、处理缺失值、标准化。"], "is_primitive": false, "primitive_kind": null, "contrast": ["手工特征"], "blocks": [], "set_relations": [{"subject": "特征向量", "relation": "element_of", "object": "实数向量空间", "note": "特征向量是实数向量空间的元素"}], "temporal_relations": [{"before": "缺失值处理", "after": "标准化", "kind": "before", "note": "先处理缺失值再标准化"}], "spatial_relations": [], "children": [{"id": "特征向量-leaf", "name": "特征向量", "summary": "n 维实数向量，是模型输入的基本数学对象。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "缺失值处理-leaf", "name": "缺失值处理", "summary": "对数据集中空值进行删除或填充，属于集合清洗操作。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "标准化-leaf", "name": "标准化", "summary": "将特征缩放到均值为 0、方差为 1 的实数区间。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型训练-node", "name": "模型训练", "summary": "通过优化损失函数调整模型参数，使预测误差最小。", "explanation": ["模型训练通过前向传播计算预测，再根据损失函数计算误差。", "梯度下降算法迭代更新参数，逐步降低损失。"], "is_primitive": false, "primitive_kind": null, "contrast": ["推理/预测"], "blocks": [], "set_relations": [{"subject": "模型", "relation": "element_of", "object": "函数空间", "note": "模型可看作一个函数"}, {"subject": "损失函数", "relation": "element_of", "object": "函数空间", "note": "损失函数也是函数空间中的元素"}, {"subject": "梯度下降", "relation": "element_of", "object": "优化算法集合", "note": "梯度下降属于迭代优化算法集合"}], "temporal_relations": [{"before": "前向传播", "after": "损失计算", "kind": "before", "note": "先前向传播再计算损失"}, {"before": "损失计算", "after": "梯度计算", "kind": "before", "note": "损失计算后反向传播求梯度"}, {"before": "梯度计算", "after": "参数更新", "kind": "before", "note": "得到梯度后更新参数"}, {"before": "前向传播", "after": "参数更新", "kind": "before", "note": "由时间先后关系传递推导"}, {"before": "前向传播", "after": "梯度计算", "kind": "before", "note": "由时间先后关系传递推导"}, {"before": "损失计算", "after": "参数更新", "kind": "before", "note": "由时间先后关系传递推导"}], "spatial_relations": [], "children": [{"id": "模型-leaf", "name": "模型", "summary": "可看作函数 f(x;θ)，将输入向量映射到输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失函数-leaf", "name": "损失函数", "summary": "评价预测值与真实值差距的数学函数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "前向传播-leaf", "name": "前向传播", "summary": "按网络结构逐层计算输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失计算-leaf", "name": "损失计算", "summary": "将预测与标签代入损失函数得到标量误差。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度计算-leaf", "name": "梯度计算", "summary": "计算损失关于参数的导数/偏导数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "参数更新-leaf", "name": "参数更新", "summary": "用 θ ← θ - η·grad 更新参数向量。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度下降-leaf", "name": "梯度下降", "summary": "一种迭代优化算法，沿负梯度方向更新参数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": ["随机梯度下降"], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型评估-node", "name": "模型评估", "summary": "在未见过的测试集上衡量模型泛化能力。", "explanation": ["模型评估使用测试集计算准确率等指标。", "混淆矩阵可以细看每一类别的预测情况。"], "is_primitive": false, "primitive_kind": null, "contrast": ["训练集表现"], "blocks": [], "set_relations": [{"subject": "测试集", "relation": "subset_of", "object": "完整数据集", "note": "测试集是从完整数据中划分出的子集"}, {"subject": "准确率", "relation": "element_of", "object": "实数", "note": "准确率是一个 0 到 1 之间的实数"}], "temporal_relations": [{"before": "模型训练", "after": "测试集评估", "kind": "before", "note": "训练完成后才做评估"}], "spatial_relations": [], "children": [{"id": "测试集-leaf", "name": "测试集", "summary": "独立于训练集的样本子集。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "准确率-leaf", "name": "准确率", "summary": "正确预测数 / 样本总数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "混淆矩阵-leaf", "name": "混淆矩阵", "summary": "行表示真实类别、列表示预测类别的计数矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
 
 const rootTitle = document.getElementById("root-title");
 const ancestorRow = document.getElementById("ancestorRow");
 const lecture = document.getElementById("lecture");
+const mathcol = document.getElementById("mathcol");
 const childrenRow = document.getElementById("childrenRow");
 const diagram = document.getElementById("diagram");
 const prevBtn = document.getElementById("prevBtn");
@@ -427,10 +542,15 @@ function getAncestors(root, nodeId) {
   return visit(root, []) || [];
 }
 
-function makePill(text, className) {
+function makePill(text, className, node) {
   const div = document.createElement("div");
-  div.className = "node-pill " + className;
+  const entity = node && node.is_primitive;
+  div.className = "node-pill " + className + (entity ? " entity" : " abstract") + " clickable";
   div.textContent = text;
+  if (node) {
+    div.dataset.nodeId = node.id;
+    div.addEventListener("click", () => goToId(node.id));
+  }
   return div;
 }
 
@@ -439,6 +559,122 @@ function escapeHtml(text) {
   div.textContent = String(text ?? "");
   return div.innerHTML;
 }
+
+/* ---------- typed expression blocks ---------- */
+
+function renderBlocksHTML(blocks) {
+  if (!blocks || !blocks.length) return "";
+  return '<div class="blocks">' + blocks.map((b, i) => renderBlock(b, i)).join("") + "</div>";
+}
+
+function blockOpen(b, i) {
+  const tone = b.tone === "warn" ? " tone-warn" : "";
+  const kind = b.type === "chart" ? "chart-block" : b.type;
+  return '<div class="block ' + kind + tone + '" style="animation-delay:' + (0.7 + i * 0.25) + 's">';
+}
+
+function symbolsHTML(symbols) {
+  if (!symbols || !symbols.length) return "";
+  const rows = symbols.map(s => '<tr><td class="sym">' + escapeHtml(s.sym || "") + '</td><td class="kind">' + escapeHtml(s.kind || "") + '</td><td>' + escapeHtml(s.meaning || "") + "</td></tr>").join("");
+  return '<table class="symtab"><thead><tr><th>符号</th><th>类型</th><th>含义</th></tr></thead><tbody>' + rows + "</tbody></table>";
+}
+
+function renderBlock(b, i) {
+  if (!b || !b.type) return "";
+  switch (b.type) {
+    case "formula": {
+      const cap = b.caption ? '<div class="caption">' + escapeHtml(b.caption) + "</div>" : "";
+      return blockOpen(b, i) + escapeHtml(b.text || "") + cap + symbolsHTML(b.symbols) + "</div>";
+    }
+    case "analogy":
+      return blockOpen(b, i) + '<div class="block-label">类比</div>' + escapeHtml(b.text || "") + "</div>";
+    case "example":
+      return blockOpen(b, i) + '<div class="block-label">例子</div>' +
+        (b.title ? '<div class="title">' + escapeHtml(b.title) + "</div>" : "") +
+        escapeHtml(b.text || "") + "</div>";
+    case "quote":
+      return blockOpen(b, i) + '<div class="block-label">原文引用</div>“' + escapeHtml(b.text || "") +
+        '”' + (b.source ? '<div class="source">—— ' + escapeHtml(b.source) + "</div>" : "") + "</div>";
+    case "callout":
+      return blockOpen(b, i) + '<div class="block-label">' + (b.tone === "warn" ? "注意" : "关键点") + "</div>" + escapeHtml(b.text || "") + "</div>";
+    case "steps":
+      return blockOpen(b, i) + '<div class="block-label">步骤</div><ol class="steps">' +
+        (b.items || []).map((s, j) =>
+          '<li style="animation-delay:' + (0.9 + j * 0.3) + 's"><span>' + escapeHtml(s) + "</span></li>"
+        ).join("") + "</ol></div>";
+    case "table": {
+      const cols = b.columns || [];
+      const head = cols.map(c => "<th>" + escapeHtml(c) + "</th>").join("");
+      const rows = (b.rows || []).map(r =>
+        "<tr>" + r.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>"
+      ).join("");
+      return blockOpen(b, i) + '<table class="block-table"><thead><tr>' + head +
+        "</tr></thead><tbody>" + rows + "</tbody></table></div>";
+    }
+    case "chart":
+      return blockOpen(b, i) + (b.title ? '<div class="chart-title">' + escapeHtml(b.title) + "</div>" : "") +
+        chartSVG(b) + "</div>";
+    case "video":
+      return blockOpen(b, i) + (b.caption ? '<div class="chart-title">' + escapeHtml(b.caption) + "</div>" : "") +
+        '<video class="block-video" controls autoplay loop muted playsinline src="' + escapeHtml(b.src || "") + '"></video></div>';
+    case "quiz":
+      return blockOpen(b, i) + '<div class="block-label">自测</div><div class="q">' + escapeHtml(b.question || "") + "</div>" +
+        (b.hint ? '<div class="hint">提示：' + escapeHtml(b.hint) + "</div>" : "") +
+        '<button type="button">显示答案</button><div class="answer">' + escapeHtml(b.answer || "") + "</div></div>";
+    default:
+      return "";
+  }
+}
+
+function chartSVG(b) {
+  const data = (b.data || []).filter(d => typeof d.value === "number");
+  if (!data.length) return "";
+  const W = 400, H = 170, padL = 44, padB = 34, padT = 14;
+  const innerW = W - padL - 12, innerH = H - padT - padB;
+  const maxV = Math.max.apply(null, data.map(d => d.value).concat([0]));
+  const minV = Math.min.apply(null, data.map(d => d.value).concat([0]));
+  const span = (maxV - minV) || 1;
+  const y = v => padT + innerH * (1 - (v - minV) / span);
+  const labels = data.map(d => escapeHtml(String(d.label == null ? "" : d.label)));
+  let body = "";
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + innerH * (1 - g / 4);
+    const gv = minV + span * g / 4;
+    body += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - 12) + '" y2="' + gy + '" stroke="#222" stroke-width="1"/>';
+    body += '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" fill="#888" font-size="10" text-anchor="end">' + (Math.round(gv * 100) / 100) + "</text>";
+  }
+  if (b.chart === "line") {
+    const pts = data.map((d, i) => {
+      const x = padL + innerW * (data.length === 1 ? 0.5 : i / (data.length - 1));
+      return [x, y(d.value)];
+    });
+    body += '<polyline class="line-path" points="' + pts.map(p => p.join(",")).join(" ") + '" fill="none" stroke="#ff8c00" stroke-width="2.5"/>';
+    pts.forEach((p, i) => {
+      body += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="#ff8c00"><animate attributeName="r" from="0" to="4" begin="' + (0.6 + i * 0.25) + 's" dur="0.3s" fill="freeze"/></circle>';
+      body += '<text x="' + p[0] + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  } else {
+    const n = data.length;
+    const slot = innerW / n;
+    const bw = Math.min(54, slot * 0.6);
+    data.forEach((d, i) => {
+      const x = padL + slot * i + (slot - bw) / 2;
+      const y0 = y(Math.max(d.value, 0)), y1 = y(Math.min(d.value, 0));
+      const h = Math.max(2, Math.abs(y1 - y0));
+      const top = Math.min(y0, y1);
+      body += '<rect class="bar-rect" x="' + x + '" y="' + top + '" width="' + bw + '" height="' + h + '" fill="#ff8c00" style="animation-delay:' + (0.8 + i * 0.25) + 's"><title>' + labels[i] + ": " + d.value + "</title></rect>";
+      body += '<text x="' + (x + bw / 2) + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  }
+  return '<svg class="chart-svg" viewBox="0 0 ' + W + " " + H + '" role="img">' + body + "</svg>";
+}
+
+// quiz reveal (delegated, works for every rendered node)
+lecture.addEventListener("click", ev => {
+  const btn = ev.target.closest(".block.quiz button");
+  if (!btn) return;
+  btn.closest(".block.quiz").classList.add("revealed");
+});
 
 /* ---------- state ---------- */
 
@@ -465,7 +701,7 @@ function renderCurrent() {
   ancestorRow.appendChild(label);
 
   const ancestors = getAncestors(TREE, node.id);
-  ancestorRow.appendChild(makePill(node.name, "current"));
+  ancestorRow.appendChild(makePill(node.name, "current", node));
 
   if (ancestors.length) {
     const sep = document.createElement("span");
@@ -477,7 +713,7 @@ function renderCurrent() {
     const ordered = ancestors.slice().reverse(); // [parent, ..., root]
     const pills = [];
     for (let i = 0; i < ordered.length; i++) {
-      const pill = makePill(ordered[i].name, i === 0 ? "ancestor group-start" : "ancestor");
+      const pill = makePill(ordered[i].name, i === 0 ? "ancestor group-start" : "ancestor", ordered[i]);
       pills.push(pill);
     }
     pills.forEach(p => ancestorRow.appendChild(p));
@@ -494,11 +730,19 @@ function renderCurrent() {
       ${(node.explanation || []).map(s => `<div class="sentence">${escapeHtml(s)}</div>`).join("")}
     </div>
     ${contrastTitle}
+    ${renderBlocksHTML((node.blocks || []).filter(b => !b || b.type !== "formula"))}
   `;
+  const formulas = (node.blocks || []).filter(b => b && b.type === "formula");
+  mathcol.innerHTML = formulas.length
+    ? '<div class="mtitle">公式与状态方程</div>' + renderBlocksHTML(formulas)
+    : '';
   // Restart CSS animation by toggling a class.
   lecture.classList.remove("fade-swap");
   void lecture.offsetWidth;
   lecture.classList.add("fade-swap");
+  mathcol.classList.remove("fade-swap");
+  void mathcol.offsetWidth;
+  mathcol.classList.add("fade-swap");
 
   // Lower: child nodes, grey, no extra explanation
   childrenRow.innerHTML = "";
@@ -507,8 +751,10 @@ function renderCurrent() {
   } else {
     for (const child of node.children) {
       const box = document.createElement("div");
-      box.className = "child-box";
+      box.className = "child-box " + (child.is_primitive ? "entity" : "abstract");
       box.innerHTML = `${escapeHtml(child.name)}<span class="type-tag">${child.is_primitive ? (child.primitive_kind === "math" ? "数学原语" : "物理实体") : "待展开概念"}</span>`;
+      box.dataset.nodeId = child.id;
+      box.addEventListener("click", () => goToId(child.id));
       childrenRow.appendChild(box);
     }
   }
@@ -525,151 +771,219 @@ function renderCurrent() {
 
 function renderDiagram(node) {
   diagram.innerHTML = "";
-  const NS = "http://www.w3.org/2000/svg";
-  const W = 800, H = 400;
+  const W = 1600, H = 800;
   const svg = diagram;
-
-  // Current node at left center.
-  const currentRect = { x: 30, y: 160, w: 190, h: 80 };
-  const childRects = [];
-  const externalRects = [];
-  const byName = new Map();
-
   const children = node.children;
-  const n = children.length;
-  // Layout children in two horizontal bands if there are more than 4.
-  const positions = [];
-  if (n === 0) {
-    // no children; maybe show relation to external objects only
-  } else if (n <= 4) {
-    for (let i = 0; i < n; i++) {
-      const x = 300 + i * 120;
-      const y = 90 + (i % 2) * 180;
-      positions.push({ x, y });
-    }
-  } else {
-    const rows = Math.ceil(n / 4);
-    for (let i = 0; i < n; i++) {
-      const row = Math.floor(i / 4);
-      const col = i % 4;
-      positions.push({ x: 300 + col * 120, y: 70 + row * 150 });
-    }
+
+  const byName = new Map();
+  const items = [];
+  const info = new Map();
+  info.set(node.name, { id: node.id, entity: node.is_primitive, external: false });
+  for (const child of children) {
+    info.set(child.name, { id: child.id, entity: child.is_primitive, external: false });
   }
+
+  function addItem(name, rect) {
+    const meta = info.get(name) || { id: null, entity: false, external: true };
+    byName.set(name, { rect, id: meta.id, entity: meta.entity });
+    items.push({ name, id: meta.id, rect, entity: meta.entity, external: meta.external });
+  }
+
+  // ---------- Main area: current node + all direct child nodes ----------
+  const currentRect = { x: 40, y: 250, w: 300, h: 300 };
+  addItem(node.name, currentRect);
+
+  const gridCols = 3;
+  const slotW = 260;
+  const slotH = 140;
+  const gapX = 25;
+  const gapY = 30;
+  const gridX = 380;
+  const gridY = 30;
 
   children.forEach((child, i) => {
-    const pos = positions[i] || { x: 400 + (i % 5) * 80, y: 80 + Math.floor(i / 5) * 120 };
-    const rect = { x: pos.x, y: pos.y, w: 100, h: 52 };
-    childRects.push({ id: child.id, name: child.name, rect });
-    byName.set(child.name, rect);
+    const col = i % gridCols;
+    const row = Math.floor(i / gridCols);
+    addItem(child.name, {
+      x: gridX + col * (slotW + gapX),
+      y: gridY + row * (slotH + gapY),
+      w: slotW - 20,
+      h: 110
+    });
   });
-  byName.set(node.name, currentRect);
 
-  // External objects used in set relations (e.g. "函数空间", "实数").
-  const usedExternal = [];
-  const seenExternal = new Set();
-  for (const rel of (node.set_relations || [])) {
-    for (const key of ["subject", "object"]) {
-      const name = rel[key];
-      if (!byName.has(name) && !seenExternal.has(name)) {
-        seenExternal.add(name);
-        usedExternal.push(name);
-      }
+  // ---------- Spatial relation panel (right side) ----------
+  const spatialContainerKinds = new Set([
+    "located_in", "inside", "contained_in", "occurs_in", "enters", "generated_in", "within", "in"
+  ]);
+  const containerOf = new Map();
+  const containedBy = new Map();
+  const spatialNames = new Set();
+
+  for (const rel of (node.spatial_relations || [])) {
+    spatialNames.add(rel.subject);
+    spatialNames.add(rel.object);
+    if (spatialContainerKinds.has(rel.relation) && rel.subject !== rel.object) {
+      containedBy.set(rel.subject, rel.object);
+      if (!containerOf.has(rel.object)) containerOf.set(rel.object, []);
+      containerOf.get(rel.object).push(rel.subject);
     }
   }
-  externalRects.push(...usedExternal.slice(0, 4).map((name, i) => {
-    const rect = { x: 660, y: 60 + i * 100, w: 120, h: 44 };
-    byName.set(name, rect);
-    return { name, rect };
-  }));
 
-  // Draw current node card.
-  let currentSvg = `<rect x="${currentRect.x}" y="${currentRect.y}" width="${currentRect.w}" height="${currentRect.h}" rx="10" fill="#fff" stroke="#fff"/><text x="${currentRect.x + currentRect.w / 2}" y="${currentRect.y + currentRect.h / 2 + 5}" text-anchor="middle" font-size="15" fill="#000" font-weight="bold">${escapeHtml(node.name)}</text>`;
-
-  // Draw child node cards (grey).
-  let childSvg = "";
-  for (const child of childRects) {
-    childSvg += `<rect x="${child.rect.x}" y="${child.rect.y}" width="${child.rect.w}" height="${child.rect.h}" rx="8" fill="#1a1a1a" stroke="#555"/><text x="${child.rect.x + child.rect.w / 2}" y="${child.rect.y + child.rect.h / 2 + 4}" text-anchor="middle" font-size="12" fill="#ccc">${escapeHtml(child.name)}</text>`;
-  }
-  // Draw external nodes (grey with dashed border).
-  let externalSvg = "";
-  for (const ext of externalRects) {
-    externalSvg += `<rect x="${ext.rect.x}" y="${ext.rect.y}" width="${ext.rect.w}" height="${ext.rect.h}" rx="8" fill="#181818" stroke="#777" stroke-dasharray="4 3"/><text x="${ext.rect.x + ext.rect.w / 2}" y="${ext.rect.y + ext.rect.h / 2 + 4}" text-anchor="middle" font-size="10" fill="#aaa">${escapeHtml(ext.name)}</text>`;
+  const spatialInfo = new Map();
+  for (const name of spatialNames) {
+    spatialInfo.set(name, info.get(name) || { id: null, entity: false, external: true });
   }
 
-  // Edges from current to every child.
-  let edgeSvg = "";
-  const currentCenter = { x: currentRect.x + currentRect.w, y: currentRect.y + currentRect.h / 2 };
-  const childAnchor = rect => ({ x: rect.x, y: rect.y + rect.h / 2 });
+  const placedSpatial = new Set();
+  const spatialItems = [];
 
-  // Build a map of temporal relations by between names.
-  const temporalMap = new Map();
-  for (const rel of (node.temporal_relations || [])) {
-    temporalMap.set(rel.before + "|" + rel.after, rel);
-    temporalMap.set(rel.after + "|" + rel.before, rel);
-  }
-  const spatialMap = new Map();
-  for (const rel of (node.spatial_relations || [])) {
-    spatialMap.set(rel.subject + "|" + rel.object, rel);
-  }
-  const setMap = new Map();
-  for (const rel of (node.set_relations || [])) {
-    setMap.set(rel.subject + "|" + rel.object, rel);
+  function placeSpatial(name, x, y, w, h) {
+    if (placedSpatial.has(name)) return;
+    placedSpatial.add(name);
+    const meta = spatialInfo.get(name) || { id: null, entity: false, external: true };
+    spatialItems.push({ name, id: meta.id, rect: { x, y, w, h }, entity: meta.entity, external: meta.external });
+
+    const subs = containerOf.get(name) || [];
+    const bigSubs = subs.filter(s => containerOf.has(s));
+    const smallSubs = subs.filter(s => !containerOf.has(s));
+
+    let cursorY = y + 36;
+    let bigCount = 0;
+    const bigCols = Math.max(1, Math.floor((w - 20) / 170));
+    for (const sub of bigSubs) {
+      const bw = Math.min(170, Math.floor((w - 20 - (bigCols - 1) * 12) / bigCols));
+      const bh = 120;
+      const bx = x + 10 + (bigCount % bigCols) * (bw + 12);
+      const by = cursorY;
+      placeSpatial(sub, bx, by, bw, bh);
+      if ((bigCount + 1) % bigCols === 0) cursorY += bh + 12;
+      bigCount++;
+    }
+    if (bigSubs.length) cursorY += 10;
+
+    const smallCols = Math.max(1, Math.floor((w - 20) / 110));
+    const sw = Math.min(100, Math.floor((w - 20 - (smallCols - 1) * 10) / smallCols));
+    const sh = 48;
+    let smallIdx = 0;
+    for (const sub of smallSubs) {
+      if (placedSpatial.has(sub)) continue;
+      const col = smallIdx % smallCols;
+      const row = Math.floor(smallIdx / smallCols);
+      const sx = x + 10 + col * (sw + 10);
+      const sy = cursorY + row * (sh + 12);
+      placeSpatial(sub, sx, sy, sw, sh);
+      smallIdx++;
+    }
   }
 
-  // Draw set relations among nodes present on the canvas.
-  for (const rel of (node.set_relations || [])) {
-    const a = byName.get(rel.subject);
-    const b = byName.get(rel.object);
-    if (!a || !b) continue;
-    const p1 = a === currentRect ? currentCenter : { x: a.x + a.w, y: a.y + a.h / 2 };
-    const p2 = b === currentRect ? { x: b.x, y: b.y + b.h / 2 } : { x: b.x, y: b.y + b.h / 2 };
-    const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
-    edgeSvg += `<path d="M ${p1.x} ${p1.y} Q ${(p1.x+p2.x)/2 + 30} ${(p1.y+p2.y)/2 - 40} ${p2.x} ${p2.y}" fill="none" stroke="#7fd6ff" stroke-width="1.8"/>`;
-    edgeSvg += `<text x="${midX + 20}" y="${midY - 18}" class="edge-label" text-anchor="middle">${escapeHtml(rel.relation)}</text>`;
+  const panelX = 1180;
+  const panelY = 20;
+  const panelW = 400;
+  const panelH = 760;
+  const topContainers = [...containerOf.keys()].filter(name => !containedBy.has(name));
+  if (topContainers.length === 0) {
+    spatialItems.push({ name: "暂无空间关系", id: null, rect: { x: panelX + 10, y: panelY + 10, w: panelW - 20, h: 100 }, entity: false, external: true });
+  } else {
+    topContainers.forEach((name, i) => {
+      const col = i % 1;
+      const row = Math.floor(i / 1);
+      placeSpatial(name, panelX + 10, panelY + 10 + row * 400, panelW - 20, 380);
+    });
   }
 
-  // Draw temporal edges: orange dashed with time label and arrow marker.
-  const temporalSeen = new Set();
+  // ---------- SVG drawing ----------
+  function rectSvg(item, fill, stroke, strokeWidth, fontSize, textFill, dash) {
+    const rect = item.rect;
+    const dashAttr = dash ? ` stroke-dasharray="${dash}"` : "";
+    const idAttr = item.id ? ` data-node-id="${escapeHtml(item.id)}"` : "";
+    const cursorAttr = item.id ? ` style="cursor:pointer"` : "";
+    return `<rect x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${dashAttr}${idAttr}${cursorAttr}/>` +
+      `<text x="${rect.x + rect.w / 2}" y="${rect.y + rect.h / 2 + 7}" text-anchor="middle" font-size="${fontSize}" fill="${textFill}">${escapeHtml(item.name)}</text>`;
+  }
+
+  function drawItem(item, isCurrent) {
+    if (isCurrent) {
+      const dash = item.entity ? "" : "7 4";
+      return rectSvg(item, "#ffffff", "#ffffff", 3, 24, "#000000", dash);
+    }
+    if (item.external) {
+      return rectSvg(item, "#101010", "#888888", 1.6, 13, "#aaaaaa", "5 4");
+    }
+    if (item.entity) {
+      return rectSvg(item, "#1a1a1a", "#dddddd", 2, 16, "#ffffff", "");
+    }
+    return rectSvg(item, "#141414", "#888888", 1.8, 16, "#dddddd", "6 4");
+  }
+
+  let svgContent = "";
+  items.forEach((item, i) => {
+    svgContent += drawItem(item, i === 0);
+  });
+
+  // Spatial panel frame + title
+  svgContent += `<rect x="${panelX}" y="${panelY}" width="${panelW}" height="${panelH}" rx="16" fill="#050505" stroke="#333" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  svgContent += `<text x="${panelX + panelW / 2}" y="${panelY + 30}" text-anchor="middle" font-size="18" fill="#ff8c00" font-weight="bold">空间关系配图</text>`;
+  spatialItems.forEach(item => {
+    svgContent += drawItem(item, false);
+  });
+
+  // Temporal edges ONLY: one-directional arrows, no text labels.
+  let temporalSvg = "";
+  const seenTemporal = new Set();
   for (const rel of (node.temporal_relations || [])) {
     const a = byName.get(rel.before);
     const b = byName.get(rel.after);
     if (!a || !b) continue;
     const key = rel.before + "|" + rel.after;
-    if (temporalSeen.has(key)) continue;
-    temporalSeen.add(key);
-    const p1 = { x: a.x + a.w / 2, y: a.y - 6 };
-    const p2 = { x: b.x + b.w / 2, y: b.y - 6 };
-    const midX = (p1.x + p2.x) / 2, midY = Math.min(p1.y, p2.y) - 24;
-    edgeSvg += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${p1.y - 40} ${p2.x} ${p2.y}" fill="none" stroke="#ff8c00" stroke-width="2.5" stroke-dasharray="7 4" marker-end="url(#arrowOrange)"/>`;
-    edgeSvg += `<text x="${midX}" y="${midY}" class="edge-label temporal" text-anchor="middle">⏱ ${escapeHtml(rel.kind)}</text>`;
-  }
-
-  // Draw spatial edges: purple dotted.
-  for (const rel of (node.spatial_relations || [])) {
-    const a = byName.get(rel.subject);
-    const b = byName.get(rel.object);
-    if (!a || !b) continue;
-    const p1 = { x: a.x + a.w, y: a.y + a.h / 2 };
-    const p2 = { x: b.x, y: b.y + b.h / 2 };
-    const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
-    edgeSvg += `<path d="M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}" fill="none" stroke="#d78cff" stroke-width="1.6" stroke-dasharray="2 5" marker-end="url(#arrowPurple)"/>`;
-    edgeSvg += `<text x="${midX}" y="${midY - 6}" class="edge-label spatial" text-anchor="middle">${escapeHtml(rel.relation)}</text>`;
+    if (seenTemporal.has(key)) continue;
+    seenTemporal.add(key);
+    const p1 = { x: a.rect.x + a.rect.w / 2, y: a.rect.y - 10 };
+    const p2 = { x: b.rect.x + b.rect.w / 2, y: b.rect.y - 10 };
+    const midX = (p1.x + p2.x) / 2;
+    temporalSvg += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${p1.y - 60} ${p2.x} ${p2.y}" fill="none" stroke="#ff8c00" stroke-width="3.5" stroke-dasharray="9 5" marker-end="url(#arrowOrange)"/>`;
   }
 
   svg.innerHTML = `
     <defs>
-      <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
         <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff8c00"/>
       </marker>
-      <marker id="arrowPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#d78cff"/>
-      </marker>
     </defs>
-    ${currentSvg}${childSvg}${externalSvg}${edgeSvg}
+    ${svgContent}${temporalSvg}
   `;
+
+  svg.querySelectorAll("[data-node-id]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      goToId(el.dataset.nodeId);
+    });
+  });
 }
 
 /* ---------- navigation & animation ---------- */
+
+function getIndexById(id) {
+  for (let i = 0; i < order.length; i++) {
+    if (order[i].id === id) return i;
+  }
+  return -1;
+}
+
+function goToId(id) {
+  const idx = getIndexById(id);
+  if (idx < 0) return;
+  pause();
+  goTo(idx);
+  const targetHash = "#" + encodeURIComponent(id);
+  if (location.hash !== targetHash) {
+    try {
+      history.replaceState(null, "", targetHash);
+    } catch (err) {
+      location.hash = targetHash;
+    }
+  }
+}
 
 function goTo(index) {
   currentIndex = (index + order.length) % order.length;
@@ -679,6 +993,16 @@ function goTo(index) {
 function next(step = 1) {
   goTo(currentIndex + step);
 }
+
+function parseHash() {
+  const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  const idx = getIndexById(raw);
+  if (idx >= 0 && idx !== currentIndex) {
+    goTo(idx);
+  }
+}
+
+window.addEventListener("hashchange", parseHash);
 
 function play() {
   if (playing) return;
@@ -717,6 +1041,10 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------- init ---------- */
+if (location.hash) {
+  const idx = getIndexById(decodeURIComponent(location.hash.replace(/^#\/?/, "")));
+  if (idx >= 0) currentIndex = idx;
+}
 renderCurrent();
 </script>
 </body>

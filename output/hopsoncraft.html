@@ -310,6 +310,13 @@
   .line-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.2s ease forwards; }
   @keyframes drawLine { to { stroke-dashoffset: 0; } }
   .block.quiz { background: #0d0d14; border: 1px solid #3a3a5a; }
+  table.symtab { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .symtab th { color: #888; font-weight: 400; text-align: left; padding: 2px 6px; border-bottom: 1px dashed #333; font-size: 11px; }
+  .symtab td { padding: 3px 6px; border-bottom: 1px solid #1c1c1c; vertical-align: top; color: #ccc; }
+  .symtab td.sym { font-family: "Cambria Math", Georgia, serif; color: #ffce85; white-space: nowrap; font-size: 14px; }
+  .symtab td.kind { color: #4da3ff; white-space: nowrap; }
+  .block.formula .caption { margin-bottom: 0; }
+  .block-video { width: 100%; max-height: 380px; border-radius: 6px; background: #000; display: block; }
   .block.quiz .q { color: #c9c9ff; }
   .block.quiz button {
     margin-top: 8px; background: #222244; color: #fff;
@@ -321,6 +328,24 @@
   .block.quiz.revealed .answer { display: block; animation: fadeIn .4s ease; }
   .block.quiz.revealed button { display: none; }
 
+  .mathcol {
+    flex: 0 0 300px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .mathcol .mtitle {
+    font-size: 11px;
+    letter-spacing: .5px;
+    color: #888;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #262626;
+    flex: 0 0 auto;
+  }
+  .mathcol .block.formula { font-size: 16px; text-align: left; }
   .diagram-wrap {
     flex: 1;
     min-width: 0;
@@ -440,6 +465,7 @@
       <div class="ancestor-row" id="ancestorRow"></div>
       <div class="main-content" id="mainContent">
         <div class="lecture" id="lecture"></div>
+        <div class="mathcol" id="mathcol"></div>
         <div class="diagram-wrap">
           <svg id="diagram" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
@@ -461,6 +487,7 @@ const TREE = {"id": "HopsonCraft 体素引擎源码走读-b94df32b", "name": "Ho
 const rootTitle = document.getElementById("root-title");
 const ancestorRow = document.getElementById("ancestorRow");
 const lecture = document.getElementById("lecture");
+const mathcol = document.getElementById("mathcol");
 const childrenRow = document.getElementById("childrenRow");
 const diagram = document.getElementById("diagram");
 const prevBtn = document.getElementById("prevBtn");
@@ -546,12 +573,19 @@ function blockOpen(b, i) {
   return '<div class="block ' + kind + tone + '" style="animation-delay:' + (0.7 + i * 0.25) + 's">';
 }
 
+function symbolsHTML(symbols) {
+  if (!symbols || !symbols.length) return "";
+  const rows = symbols.map(s => '<tr><td class="sym">' + escapeHtml(s.sym || "") + '</td><td class="kind">' + escapeHtml(s.kind || "") + '</td><td>' + escapeHtml(s.meaning || "") + "</td></tr>").join("");
+  return '<table class="symtab"><thead><tr><th>符号</th><th>类型</th><th>含义</th></tr></thead><tbody>' + rows + "</tbody></table>";
+}
+
 function renderBlock(b, i) {
   if (!b || !b.type) return "";
   switch (b.type) {
-    case "formula":
-      return blockOpen(b, i) + escapeHtml(b.text || "") +
-        (b.caption ? '<div class="caption">' + escapeHtml(b.caption) + "</div>" : "") + "</div>";
+    case "formula": {
+      const cap = b.caption ? '<div class="caption">' + escapeHtml(b.caption) + "</div>" : "";
+      return blockOpen(b, i) + escapeHtml(b.text || "") + cap + symbolsHTML(b.symbols) + "</div>";
+    }
     case "analogy":
       return blockOpen(b, i) + '<div class="block-label">类比</div>' + escapeHtml(b.text || "") + "</div>";
     case "example":
@@ -580,6 +614,9 @@ function renderBlock(b, i) {
     case "chart":
       return blockOpen(b, i) + (b.title ? '<div class="chart-title">' + escapeHtml(b.title) + "</div>" : "") +
         chartSVG(b) + "</div>";
+    case "video":
+      return blockOpen(b, i) + (b.caption ? '<div class="chart-title">' + escapeHtml(b.caption) + "</div>" : "") +
+        '<video class="block-video" controls autoplay loop muted playsinline src="' + escapeHtml(b.src || "") + '"></video></div>';
     case "quiz":
       return blockOpen(b, i) + '<div class="block-label">自测</div><div class="q">' + escapeHtml(b.question || "") + "</div>" +
         (b.hint ? '<div class="hint">提示：' + escapeHtml(b.hint) + "</div>" : "") +
@@ -693,12 +730,19 @@ function renderCurrent() {
       ${(node.explanation || []).map(s => `<div class="sentence">${escapeHtml(s)}</div>`).join("")}
     </div>
     ${contrastTitle}
-    ${renderBlocksHTML(node.blocks)}
+    ${renderBlocksHTML((node.blocks || []).filter(b => !b || b.type !== "formula"))}
   `;
+  const formulas = (node.blocks || []).filter(b => b && b.type === "formula");
+  mathcol.innerHTML = formulas.length
+    ? '<div class="mtitle">公式与状态方程</div>' + renderBlocksHTML(formulas)
+    : '';
   // Restart CSS animation by toggling a class.
   lecture.classList.remove("fade-swap");
   void lecture.offsetWidth;
   lecture.classList.add("fade-swap");
+  mathcol.classList.remove("fade-swap");
+  void mathcol.offsetWidth;
+  mathcol.classList.add("fade-swap");
 
   // Lower: child nodes, grey, no extra explanation
   childrenRow.innerHTML = "";

@@ -1,7 +1,8 @@
 """Basic tests for the concept animator tool.
 
-Run with:
-    python -m unittest concept_animator.test_concept_animator
+Run from the repository root with:
+    python -m unittest discover -s tests -v
+    python -m unittest tests.test_concept_animator -v
 """
 
 from __future__ import annotations
@@ -10,11 +11,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from . import cli
-from .builder import ConceptBuilder
-from .inference import infer_tree
-from .render import render_html
-from .schema import load_tree, ConceptNode
+from concept_animator import cli
+from concept_animator.builder import ConceptBuilder
+from concept_animator.inference import infer_tree
+from concept_animator.render import render_html
+from concept_animator.schema import load_tree, ConceptNode
+
+# tests/ sits next to the package inside the repository root, so the sample
+# data moved to <repo-root>/data/.
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 class FakeLLM:
@@ -55,7 +60,7 @@ class FakeLLM:
 
 class ConceptAnimatorTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.sample = Path(__file__).resolve().parent / "sample_tree.json"
+        self.sample = DATA_DIR / "sample_tree.json"
         self.tree = load_tree(str(self.sample))
 
     def test_sample_tree_is_valid(self) -> None:

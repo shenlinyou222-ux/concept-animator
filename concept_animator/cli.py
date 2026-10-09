@@ -1,9 +1,13 @@
 """Command-line interface for the concept explainer tool.
 
+All paths are resolved from the current working directory, so run from the
+repository root.
+
 Examples
 --------
-python -m concept_animator.cli demo
-python -m concept_animator.cli render --input sample_tree.json --output output/demo.html
+python -m concept_animator.cli demo --output output/demo.html
+python -m concept_animator.cli verify --input data/sample_tree.json
+python -m concept_animator.cli render --input data/sample_tree.json --output output/demo.html
 OPENAI_API_KEY=... python -m concept_animator.cli build --topic "机器学习是什么" --output output/my_tree.json
 OPENAI_API_KEY=... python -m concept_animator.cli build --topic "光合作用" --output output/photosynthesis.json --render output/photosynthesis.html
 """
@@ -21,10 +25,20 @@ from .llm_client import LLMClient
 from .render import render_to_file
 from .schema import load_tree, save_tree, ConceptNode
 
+# This module lives at <repo-root>/concept_animator/cli.py, so the repository
+# root that owns data/ output/ media/ is exactly one level above the package.
+PACKAGE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = PACKAGE_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+
 
 def _demo_tree() -> ConceptNode:
-    here = Path(__file__).resolve().parent
-    sample = here / "sample_tree.json"
+    sample = DATA_DIR / "sample_tree.json"
+    if not sample.is_file():
+        raise FileNotFoundError(
+            f"Bundled sample tree not found at {sample}. "
+            "Run the CLI from a full checkout of the repository."
+        )
     return load_tree(str(sample))
 
 
@@ -92,7 +106,29 @@ def cmd_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def _configure_stdio() -> None:
+    """Keep CJK output printable when stdout is not an interactive console.
+
+    On Windows, Python falls back to the locale encoding (cp1252 on a US/EU
+    install) whenever stdout is redirected or piped, and the shipped trees have
+    Chinese names, so ``print(f"OK: {tree.name}, ...")`` used to die with
+    UnicodeEncodeError. Pinning the CLI's own output streams to UTF-8 (and never
+    failing on a character the terminal cannot draw) makes
+    ``python -m concept_animator.cli verify ... > log.txt`` safe everywhere.
+    Nothing about the tool's data handling changes.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue  # stream replaced by the caller, or Python < 3.7
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _configure_stdio()
     parser = argparse.ArgumentParser(
         prog="concept-animator",
         description="Build and render concept explanation trees as HTML animations.",

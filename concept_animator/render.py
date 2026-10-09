@@ -1075,13 +1075,24 @@ renderCurrent();
 
 
 def _embed_videos(tree: ConceptNode) -> None:
-    """Inline video block sources as base64 data URIs so the HTML stays single-file."""
+    """Inline video block sources as base64 data URIs so the HTML stays single-file.
+
+    Video sources in the shipped trees are written relative to the repository
+    root (e.g. ``media/videos/manim_scene/480p15/LoadFactor.mp4``), so the
+    lookup is tried in order: as-given (relative to the CWD), relative to the
+    repository root, then relative to the package directory.
+    """
+    package_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(package_dir)
     for _, node in tree.walk():
         for block in node.blocks:
             if block.get("type") == "video" and block.get("src"):
-                pkg = os.path.dirname(os.path.abspath(__file__))
                 path = None
-                for cand in (block["src"], os.path.join(pkg, block["src"])):
+                for cand in (
+                    block["src"],
+                    os.path.join(repo_root, block["src"]),
+                    os.path.join(package_dir, block["src"]),
+                ):
                     if os.path.isfile(cand):
                         path = cand
                         break

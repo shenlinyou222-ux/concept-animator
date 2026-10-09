@@ -6,6 +6,12 @@ __pycache__/
 venv/
 env/
 
+# 打包/安装产物
+build/
+dist/
+*.egg-info/
+.eggs/
+
 # 编辑器 / 系统
 .vscode/
 .idea/

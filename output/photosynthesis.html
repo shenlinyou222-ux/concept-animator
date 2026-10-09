@@ -188,7 +188,7 @@
   }
 
   .lecture {
-    flex: 0 0 360px;
+    flex: 0 0 440px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -252,6 +252,100 @@
     margin-bottom: 2px;
   }
 
+  /* ---------- typed expression blocks ---------- */
+  .blocks { display: flex; flex-direction: column; gap: 10px; }
+  .block {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: slideIn .5s ease forwards;
+  }
+  .block.formula {
+    font-family: "Cambria Math", "STIX Two Math", Georgia, serif;
+    font-size: 19px;
+    text-align: center;
+    background: #0c0c0c;
+    border: 1px solid #333;
+  }
+  .block.formula .caption {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+  }
+  .block.analogy { background: #101418; border-left: 3px solid #4da3ff; color: #cfe3ff; }
+  .block.example { background: #141210; border-left: 3px solid #ffd24d; color: #ffeec2; }
+  .block.example .title { font-weight: 700; color: #ffd24d; margin-bottom: 4px; font-size: 13px; }
+  .block.quote { background: #0a0f0a; border-left: 3px solid #57d98a; color: #d2f5e0; font-style: italic; }
+  .block.quote .source { font-style: normal; font-size: 11px; color: #57d98a; margin-top: 6px; text-align: right; }
+  .block.callout { border: 1px dashed #ff8c00; color: #ffce85; background: #141005; }
+  .block.callout.tone-warn { border-color: #ff4d4d; color: #ffb3b3; background: #140505; }
+  .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+  .steps li {
+    display: flex; gap: 10px; align-items: flex-start;
+    opacity: 0; transform: translateX(-12px);
+    animation: slideIn .45s ease forwards;
+    background: #0d0d0d; border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    flex: 0 0 22px; height: 22px; border-radius: 50%;
+    background: var(--orange-fill); color: #000;
+    font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  table.block-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .block-table th { background: #1c1c1c; }
+  .block-table th, .block-table td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+  .block.chart-block { background: #0b0b0b; border: 1px solid #262626; }
+  .block.chart-block .chart-title { font-size: 12px; color: #bbb; margin-bottom: 6px; }
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .bar-rect { transform: scaleY(0); transform-origin: bottom; animation: growUp .8s ease forwards; }
+  @keyframes growUp { to { transform: scaleY(1); } }
+  .line-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.2s ease forwards; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .block.quiz { background: #0d0d14; border: 1px solid #3a3a5a; }
+  table.symtab { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .symtab th { color: #888; font-weight: 400; text-align: left; padding: 2px 6px; border-bottom: 1px dashed #333; font-size: 11px; }
+  .symtab td { padding: 3px 6px; border-bottom: 1px solid #1c1c1c; vertical-align: top; color: #ccc; }
+  .symtab td.sym { font-family: "Cambria Math", Georgia, serif; color: #ffce85; white-space: nowrap; font-size: 14px; }
+  .symtab td.kind { color: #4da3ff; white-space: nowrap; }
+  .block.formula .caption { margin-bottom: 0; }
+  .block-video { width: 100%; max-height: 380px; border-radius: 6px; background: #000; display: block; }
+  .block.quiz .q { color: #c9c9ff; }
+  .block.quiz button {
+    margin-top: 8px; background: #222244; color: #fff;
+    border: 1px solid #556; border-radius: 6px;
+    padding: 5px 10px; cursor: pointer; font-size: 12px;
+  }
+  .block.quiz .hint { font-size: 12px; color: #888; margin-top: 4px; }
+  .block.quiz .answer { display: none; margin-top: 8px; color: #9fd89f; border-top: 1px dashed #333; padding-top: 8px; }
+  .block.quiz.revealed .answer { display: block; animation: fadeIn .4s ease; }
+  .block.quiz.revealed button { display: none; }
+
+  .mathcol {
+    flex: 0 0 300px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .mathcol .mtitle {
+    font-size: 11px;
+    letter-spacing: .5px;
+    color: #888;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #262626;
+    flex: 0 0 auto;
+  }
+  .mathcol .block.formula { font-size: 16px; text-align: left; }
   .diagram-wrap {
     flex: 1;
     min-width: 0;
@@ -371,6 +465,7 @@
       <div class="ancestor-row" id="ancestorRow"></div>
       <div class="main-content" id="mainContent">
         <div class="lecture" id="lecture"></div>
+        <div class="mathcol" id="mathcol"></div>
         <div class="diagram-wrap">
           <svg id="diagram" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
@@ -387,11 +482,12 @@
 <script>
 "use strict";
 
-const TREE = {"id": "光合作用-root", "name": "光合作用", "summary": "光合作用利用光能，将水和二氧化碳转化为葡萄糖和氧气，发生在叶绿体中。", "explanation": ["光合作用将光能转化为化学能，原料是水和二氧化碳，产物是葡萄糖和氧气。", "它发生在植物细胞的叶绿体中，分为光反应和暗反应两个阶段。", "光反应在类囊体膜上进行，暗反应在叶绿体基质中进行，两阶段由 ATP 和 NADPH 连接。"], "is_primitive": false, "primitive_kind": null, "contrast": ["呼吸作用", "化能合成作用"], "set_relations": [{"subject": "光反应", "relation": "subset_of", "object": "光合作用", "note": "光反应是光合作用的一个阶段"}, {"subject": "暗反应", "relation": "subset_of", "object": "光合作用", "note": "暗反应是光合作用的一个阶段"}, {"subject": "光反应", "relation": "disjoint_from", "object": "暗反应", "note": "两个阶段在时空上可区分"}], "temporal_relations": [{"before": "光反应", "after": "暗反应", "kind": "before", "note": "光反应先于暗反应，为暗反应提供 ATP 和 NADPH"}], "spatial_relations": [{"subject": "光反应", "relation": "occurs_in", "object": "类囊体膜", "note": "光反应发生在类囊体膜上"}, {"subject": "暗反应", "relation": "occurs_in", "object": "叶绿体基质", "note": "暗反应发生在叶绿体基质中"}, {"subject": "叶绿素", "relation": "located_in", "object": "类囊体膜", "note": "叶绿素嵌在类囊体膜上"}, {"subject": "水", "relation": "located_in", "object": "类囊体腔", "note": "水在类囊体腔中被光解"}, {"subject": "葡萄糖", "relation": "located_in", "object": "叶绿体基质", "note": "葡萄糖在叶绿体基质中合成"}, {"subject": "类囊体膜", "relation": "located_in", "object": "叶绿体", "note": "类囊体膜位于叶绿体内部"}, {"subject": "叶绿体基质", "relation": "located_in", "object": "叶绿体", "note": "叶绿体基质填充叶绿体内部"}, {"subject": "类囊体腔", "relation": "located_in", "object": "叶绿体", "note": "类囊体腔位于叶绿体内"}], "children": [{"id": "叶绿体-leaf", "name": "叶绿体", "summary": "植物细胞中含叶绿素的细胞器，是光合作用发生的场所。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光能-leaf", "name": "光能", "summary": "太阳辐射提供的能量，驱动水的光解和 ATP 合成。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "水-leaf", "name": "水", "summary": "光反应的原料，在类囊体膜上被光解产生氧气。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "二氧化碳-leaf", "name": "二氧化碳", "summary": "暗反应的原料，被固定后进入卡尔文循环。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "氧气-leaf", "name": "氧气", "summary": "光反应中水光解的副产物，释放到大气中。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "葡萄糖-leaf", "name": "葡萄糖", "summary": "暗反应最终合成的有机物，储存化学能。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光反应-node", "name": "光反应", "summary": "在类囊体膜上利用光能分解水，产生氧气、ATP 和 NADPH。", "explanation": ["光反应发生在类囊体膜上，叶绿素吸收光能。", "水被光解产生氧气，同时生成 ATP 和 NADPH。"], "is_primitive": false, "primitive_kind": null, "contrast": ["暗反应"], "set_relations": [{"subject": "叶绿素", "relation": "element_of", "object": "类囊体膜", "note": "叶绿素位于类囊体膜上"}, {"subject": "光能", "relation": "element_of", "object": "电磁辐射", "note": "光能属于电磁辐射"}, {"subject": "水", "relation": "element_of", "object": "光反应原料集合", "note": "水是光反应原料"}], "temporal_relations": [{"before": "光能", "after": "水", "kind": "before", "note": "先吸收光能再光解水"}], "spatial_relations": [{"subject": "光反应", "relation": "occurs_in", "object": "类囊体膜", "note": "光反应的场所是类囊体膜"}, {"subject": "叶绿素", "relation": "located_in", "object": "类囊体膜", "note": "叶绿素嵌在类囊体膜上"}, {"subject": "水", "relation": "located_in", "object": "类囊体腔", "note": "水在类囊体腔中被光解"}, {"subject": "氧气", "relation": "generated_in", "object": "类囊体腔", "note": "水光解释放的氧气进入类囊体腔/细胞"}], "children": [{"id": "类囊体膜-leaf", "name": "类囊体膜", "summary": "叶绿体内进行光反应的膜结构，含有叶绿素和电子传递链。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "叶绿素-leaf", "name": "叶绿素", "summary": "吸收光能的光合色素，主要吸收红光和蓝紫光。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光能-light-leaf", "name": "光能", "summary": "驱动光反应的电磁辐射能。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "水-light-leaf", "name": "水", "summary": "光反应中被光解的原料。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "氧气-light-leaf", "name": "氧气", "summary": "水光解释放的气体产物。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "ATP-light-leaf", "name": "ATP", "summary": "光反应合成的能量货币，供暗反应使用。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "NADPH-light-leaf", "name": "NADPH", "summary": "光反应合成的还原剂，供暗反应还原 C3。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "类囊体腔-leaf", "name": "类囊体腔", "summary": "类囊体膜围成的腔，水在这里被光解。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "暗反应-node", "name": "暗反应", "summary": "在叶绿体基质中利用二氧化碳和 ATP/NADPH，通过卡尔文循环合成葡萄糖。", "explanation": ["暗反应在叶绿体基质中进行，二氧化碳被固定为 C3。", "C3 被 ATP 和 NADPH 还原，最终生成葡萄糖并再生 RuBP。"], "is_primitive": false, "primitive_kind": null, "contrast": ["光反应"], "set_relations": [{"subject": "二氧化碳", "relation": "element_of", "object": "暗反应原料集合", "note": "二氧化碳是暗反应原料"}, {"subject": "葡萄糖", "relation": "element_of", "object": "暗反应产物集合", "note": "葡萄糖是暗反应产物"}], "temporal_relations": [{"before": "二氧化碳", "after": "葡萄糖", "kind": "before", "note": "二氧化碳先被固定，最终生成葡萄糖"}], "spatial_relations": [{"subject": "暗反应", "relation": "occurs_in", "object": "叶绿体基质", "note": "暗反应的场所是叶绿体基质"}, {"subject": "二氧化碳", "relation": "enters", "object": "叶绿体基质", "note": "二氧化碳进入叶绿体基质参与固定"}, {"subject": "C3", "relation": "located_in", "object": "叶绿体基质", "note": "C3 在叶绿体基质中生成"}, {"subject": "葡萄糖", "relation": "located_in", "object": "叶绿体基质", "note": "葡萄糖在叶绿体基质中合成"}, {"subject": "RuBP", "relation": "located_in", "object": "叶绿体基质", "note": "RuBP 在叶绿体基质中参与卡尔文循环"}], "children": [{"id": "叶绿体基质-leaf", "name": "叶绿体基质", "summary": "叶绿体内进行暗反应的半流体基质。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "二氧化碳-dark-leaf", "name": "二氧化碳", "summary": "暗反应中被固定的无机碳源。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "C3-dark-leaf", "name": "C3", "summary": "二氧化碳固定后产生的三碳化合物。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "RuBP-dark-leaf", "name": "RuBP", "summary": "卡尔文循环中再生并固定二氧化碳的五碳化合物。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "葡萄糖-dark-leaf", "name": "葡萄糖", "summary": "暗反应最终合成的六碳糖。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
+const TREE = {"id": "光合作用-root", "name": "光合作用", "summary": "光合作用利用光能，将水和二氧化碳转化为葡萄糖和氧气，发生在叶绿体中。", "explanation": ["光合作用将光能转化为化学能，原料是水和二氧化碳，产物是葡萄糖和氧气。", "它发生在植物细胞的叶绿体中，分为光反应和暗反应两个阶段。", "光反应在类囊体膜上进行，暗反应在叶绿体基质中进行，两阶段由 ATP 和 NADPH 连接。"], "is_primitive": false, "primitive_kind": null, "contrast": ["呼吸作用", "化能合成作用"], "blocks": [], "set_relations": [{"subject": "光反应", "relation": "subset_of", "object": "光合作用", "note": "光反应是光合作用的一个阶段"}, {"subject": "暗反应", "relation": "subset_of", "object": "光合作用", "note": "暗反应是光合作用的一个阶段"}, {"subject": "光反应", "relation": "disjoint_from", "object": "暗反应", "note": "两个阶段在时空上可区分"}], "temporal_relations": [{"before": "光反应", "after": "暗反应", "kind": "before", "note": "光反应先于暗反应，为暗反应提供 ATP 和 NADPH"}], "spatial_relations": [{"subject": "光反应", "relation": "occurs_in", "object": "类囊体膜", "note": "光反应发生在类囊体膜上"}, {"subject": "暗反应", "relation": "occurs_in", "object": "叶绿体基质", "note": "暗反应发生在叶绿体基质中"}, {"subject": "叶绿素", "relation": "located_in", "object": "类囊体膜", "note": "叶绿素嵌在类囊体膜上"}, {"subject": "水", "relation": "located_in", "object": "类囊体腔", "note": "水在类囊体腔中被光解"}, {"subject": "葡萄糖", "relation": "located_in", "object": "叶绿体基质", "note": "葡萄糖在叶绿体基质中合成"}, {"subject": "类囊体膜", "relation": "located_in", "object": "叶绿体", "note": "类囊体膜位于叶绿体内部"}, {"subject": "叶绿体基质", "relation": "located_in", "object": "叶绿体", "note": "叶绿体基质填充叶绿体内部"}, {"subject": "类囊体腔", "relation": "located_in", "object": "叶绿体", "note": "类囊体腔位于叶绿体内"}], "children": [{"id": "叶绿体-leaf", "name": "叶绿体", "summary": "植物细胞中含叶绿素的细胞器，是光合作用发生的场所。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光能-leaf", "name": "光能", "summary": "太阳辐射提供的能量，驱动水的光解和 ATP 合成。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "水-leaf", "name": "水", "summary": "光反应的原料，在类囊体膜上被光解产生氧气。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "二氧化碳-leaf", "name": "二氧化碳", "summary": "暗反应的原料，被固定后进入卡尔文循环。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "氧气-leaf", "name": "氧气", "summary": "光反应中水光解的副产物，释放到大气中。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "葡萄糖-leaf", "name": "葡萄糖", "summary": "暗反应最终合成的有机物，储存化学能。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光反应-node", "name": "光反应", "summary": "在类囊体膜上利用光能分解水，产生氧气、ATP 和 NADPH。", "explanation": ["光反应发生在类囊体膜上，叶绿素吸收光能。", "水被光解产生氧气，同时生成 ATP 和 NADPH。"], "is_primitive": false, "primitive_kind": null, "contrast": ["暗反应"], "blocks": [], "set_relations": [{"subject": "叶绿素", "relation": "element_of", "object": "类囊体膜", "note": "叶绿素位于类囊体膜上"}, {"subject": "光能", "relation": "element_of", "object": "电磁辐射", "note": "光能属于电磁辐射"}, {"subject": "水", "relation": "element_of", "object": "光反应原料集合", "note": "水是光反应原料"}], "temporal_relations": [{"before": "光能", "after": "水", "kind": "before", "note": "先吸收光能再光解水"}], "spatial_relations": [{"subject": "光反应", "relation": "occurs_in", "object": "类囊体膜", "note": "光反应的场所是类囊体膜"}, {"subject": "叶绿素", "relation": "located_in", "object": "类囊体膜", "note": "叶绿素嵌在类囊体膜上"}, {"subject": "水", "relation": "located_in", "object": "类囊体腔", "note": "水在类囊体腔中被光解"}, {"subject": "氧气", "relation": "generated_in", "object": "类囊体腔", "note": "水光解释放的氧气进入类囊体腔/细胞"}], "children": [{"id": "类囊体膜-leaf", "name": "类囊体膜", "summary": "叶绿体内进行光反应的膜结构，含有叶绿素和电子传递链。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "叶绿素-leaf", "name": "叶绿素", "summary": "吸收光能的光合色素，主要吸收红光和蓝紫光。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光能-light-leaf", "name": "光能", "summary": "驱动光反应的电磁辐射能。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "水-light-leaf", "name": "水", "summary": "光反应中被光解的原料。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "氧气-light-leaf", "name": "氧气", "summary": "水光解释放的气体产物。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "ATP-light-leaf", "name": "ATP", "summary": "光反应合成的能量货币，供暗反应使用。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "NADPH-light-leaf", "name": "NADPH", "summary": "光反应合成的还原剂，供暗反应还原 C3。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "类囊体腔-leaf", "name": "类囊体腔", "summary": "类囊体膜围成的腔，水在这里被光解。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "暗反应-node", "name": "暗反应", "summary": "在叶绿体基质中利用二氧化碳和 ATP/NADPH，通过卡尔文循环合成葡萄糖。", "explanation": ["暗反应在叶绿体基质中进行，二氧化碳被固定为 C3。", "C3 被 ATP 和 NADPH 还原，最终生成葡萄糖并再生 RuBP。"], "is_primitive": false, "primitive_kind": null, "contrast": ["光反应"], "blocks": [], "set_relations": [{"subject": "二氧化碳", "relation": "element_of", "object": "暗反应原料集合", "note": "二氧化碳是暗反应原料"}, {"subject": "葡萄糖", "relation": "element_of", "object": "暗反应产物集合", "note": "葡萄糖是暗反应产物"}], "temporal_relations": [{"before": "二氧化碳", "after": "葡萄糖", "kind": "before", "note": "二氧化碳先被固定，最终生成葡萄糖"}], "spatial_relations": [{"subject": "暗反应", "relation": "occurs_in", "object": "叶绿体基质", "note": "暗反应的场所是叶绿体基质"}, {"subject": "二氧化碳", "relation": "enters", "object": "叶绿体基质", "note": "二氧化碳进入叶绿体基质参与固定"}, {"subject": "C3", "relation": "located_in", "object": "叶绿体基质", "note": "C3 在叶绿体基质中生成"}, {"subject": "葡萄糖", "relation": "located_in", "object": "叶绿体基质", "note": "葡萄糖在叶绿体基质中合成"}, {"subject": "RuBP", "relation": "located_in", "object": "叶绿体基质", "note": "RuBP 在叶绿体基质中参与卡尔文循环"}], "children": [{"id": "叶绿体基质-leaf", "name": "叶绿体基质", "summary": "叶绿体内进行暗反应的半流体基质。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "二氧化碳-dark-leaf", "name": "二氧化碳", "summary": "暗反应中被固定的无机碳源。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "C3-dark-leaf", "name": "C3", "summary": "二氧化碳固定后产生的三碳化合物。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "RuBP-dark-leaf", "name": "RuBP", "summary": "卡尔文循环中再生并固定二氧化碳的五碳化合物。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "葡萄糖-dark-leaf", "name": "葡萄糖", "summary": "暗反应最终合成的六碳糖。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
 
 const rootTitle = document.getElementById("root-title");
 const ancestorRow = document.getElementById("ancestorRow");
 const lecture = document.getElementById("lecture");
+const mathcol = document.getElementById("mathcol");
 const childrenRow = document.getElementById("childrenRow");
 const diagram = document.getElementById("diagram");
 const prevBtn = document.getElementById("prevBtn");
@@ -464,6 +560,122 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+/* ---------- typed expression blocks ---------- */
+
+function renderBlocksHTML(blocks) {
+  if (!blocks || !blocks.length) return "";
+  return '<div class="blocks">' + blocks.map((b, i) => renderBlock(b, i)).join("") + "</div>";
+}
+
+function blockOpen(b, i) {
+  const tone = b.tone === "warn" ? " tone-warn" : "";
+  const kind = b.type === "chart" ? "chart-block" : b.type;
+  return '<div class="block ' + kind + tone + '" style="animation-delay:' + (0.7 + i * 0.25) + 's">';
+}
+
+function symbolsHTML(symbols) {
+  if (!symbols || !symbols.length) return "";
+  const rows = symbols.map(s => '<tr><td class="sym">' + escapeHtml(s.sym || "") + '</td><td class="kind">' + escapeHtml(s.kind || "") + '</td><td>' + escapeHtml(s.meaning || "") + "</td></tr>").join("");
+  return '<table class="symtab"><thead><tr><th>符号</th><th>类型</th><th>含义</th></tr></thead><tbody>' + rows + "</tbody></table>";
+}
+
+function renderBlock(b, i) {
+  if (!b || !b.type) return "";
+  switch (b.type) {
+    case "formula": {
+      const cap = b.caption ? '<div class="caption">' + escapeHtml(b.caption) + "</div>" : "";
+      return blockOpen(b, i) + escapeHtml(b.text || "") + cap + symbolsHTML(b.symbols) + "</div>";
+    }
+    case "analogy":
+      return blockOpen(b, i) + '<div class="block-label">类比</div>' + escapeHtml(b.text || "") + "</div>";
+    case "example":
+      return blockOpen(b, i) + '<div class="block-label">例子</div>' +
+        (b.title ? '<div class="title">' + escapeHtml(b.title) + "</div>" : "") +
+        escapeHtml(b.text || "") + "</div>";
+    case "quote":
+      return blockOpen(b, i) + '<div class="block-label">原文引用</div>“' + escapeHtml(b.text || "") +
+        '”' + (b.source ? '<div class="source">—— ' + escapeHtml(b.source) + "</div>" : "") + "</div>";
+    case "callout":
+      return blockOpen(b, i) + '<div class="block-label">' + (b.tone === "warn" ? "注意" : "关键点") + "</div>" + escapeHtml(b.text || "") + "</div>";
+    case "steps":
+      return blockOpen(b, i) + '<div class="block-label">步骤</div><ol class="steps">' +
+        (b.items || []).map((s, j) =>
+          '<li style="animation-delay:' + (0.9 + j * 0.3) + 's"><span>' + escapeHtml(s) + "</span></li>"
+        ).join("") + "</ol></div>";
+    case "table": {
+      const cols = b.columns || [];
+      const head = cols.map(c => "<th>" + escapeHtml(c) + "</th>").join("");
+      const rows = (b.rows || []).map(r =>
+        "<tr>" + r.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>"
+      ).join("");
+      return blockOpen(b, i) + '<table class="block-table"><thead><tr>' + head +
+        "</tr></thead><tbody>" + rows + "</tbody></table></div>";
+    }
+    case "chart":
+      return blockOpen(b, i) + (b.title ? '<div class="chart-title">' + escapeHtml(b.title) + "</div>" : "") +
+        chartSVG(b) + "</div>";
+    case "video":
+      return blockOpen(b, i) + (b.caption ? '<div class="chart-title">' + escapeHtml(b.caption) + "</div>" : "") +
+        '<video class="block-video" controls autoplay loop muted playsinline src="' + escapeHtml(b.src || "") + '"></video></div>';
+    case "quiz":
+      return blockOpen(b, i) + '<div class="block-label">自测</div><div class="q">' + escapeHtml(b.question || "") + "</div>" +
+        (b.hint ? '<div class="hint">提示：' + escapeHtml(b.hint) + "</div>" : "") +
+        '<button type="button">显示答案</button><div class="answer">' + escapeHtml(b.answer || "") + "</div></div>";
+    default:
+      return "";
+  }
+}
+
+function chartSVG(b) {
+  const data = (b.data || []).filter(d => typeof d.value === "number");
+  if (!data.length) return "";
+  const W = 400, H = 170, padL = 44, padB = 34, padT = 14;
+  const innerW = W - padL - 12, innerH = H - padT - padB;
+  const maxV = Math.max.apply(null, data.map(d => d.value).concat([0]));
+  const minV = Math.min.apply(null, data.map(d => d.value).concat([0]));
+  const span = (maxV - minV) || 1;
+  const y = v => padT + innerH * (1 - (v - minV) / span);
+  const labels = data.map(d => escapeHtml(String(d.label == null ? "" : d.label)));
+  let body = "";
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + innerH * (1 - g / 4);
+    const gv = minV + span * g / 4;
+    body += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - 12) + '" y2="' + gy + '" stroke="#222" stroke-width="1"/>';
+    body += '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" fill="#888" font-size="10" text-anchor="end">' + (Math.round(gv * 100) / 100) + "</text>";
+  }
+  if (b.chart === "line") {
+    const pts = data.map((d, i) => {
+      const x = padL + innerW * (data.length === 1 ? 0.5 : i / (data.length - 1));
+      return [x, y(d.value)];
+    });
+    body += '<polyline class="line-path" points="' + pts.map(p => p.join(",")).join(" ") + '" fill="none" stroke="#ff8c00" stroke-width="2.5"/>';
+    pts.forEach((p, i) => {
+      body += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="#ff8c00"><animate attributeName="r" from="0" to="4" begin="' + (0.6 + i * 0.25) + 's" dur="0.3s" fill="freeze"/></circle>';
+      body += '<text x="' + p[0] + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  } else {
+    const n = data.length;
+    const slot = innerW / n;
+    const bw = Math.min(54, slot * 0.6);
+    data.forEach((d, i) => {
+      const x = padL + slot * i + (slot - bw) / 2;
+      const y0 = y(Math.max(d.value, 0)), y1 = y(Math.min(d.value, 0));
+      const h = Math.max(2, Math.abs(y1 - y0));
+      const top = Math.min(y0, y1);
+      body += '<rect class="bar-rect" x="' + x + '" y="' + top + '" width="' + bw + '" height="' + h + '" fill="#ff8c00" style="animation-delay:' + (0.8 + i * 0.25) + 's"><title>' + labels[i] + ": " + d.value + "</title></rect>";
+      body += '<text x="' + (x + bw / 2) + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  }
+  return '<svg class="chart-svg" viewBox="0 0 ' + W + " " + H + '" role="img">' + body + "</svg>";
+}
+
+// quiz reveal (delegated, works for every rendered node)
+lecture.addEventListener("click", ev => {
+  const btn = ev.target.closest(".block.quiz button");
+  if (!btn) return;
+  btn.closest(".block.quiz").classList.add("revealed");
+});
+
 /* ---------- state ---------- */
 
 let currentIndex = 0;
@@ -518,11 +730,19 @@ function renderCurrent() {
       ${(node.explanation || []).map(s => `<div class="sentence">${escapeHtml(s)}</div>`).join("")}
     </div>
     ${contrastTitle}
+    ${renderBlocksHTML((node.blocks || []).filter(b => !b || b.type !== "formula"))}
   `;
+  const formulas = (node.blocks || []).filter(b => b && b.type === "formula");
+  mathcol.innerHTML = formulas.length
+    ? '<div class="mtitle">公式与状态方程</div>' + renderBlocksHTML(formulas)
+    : '';
   // Restart CSS animation by toggling a class.
   lecture.classList.remove("fade-swap");
   void lecture.offsetWidth;
   lecture.classList.add("fade-swap");
+  mathcol.classList.remove("fade-swap");
+  void mathcol.offsetWidth;
+  mathcol.classList.add("fade-swap");
 
   // Lower: child nodes, grey, no extra explanation
   childrenRow.innerHTML = "";

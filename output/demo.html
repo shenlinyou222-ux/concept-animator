@@ -188,7 +188,7 @@
   }
 
   .lecture {
-    flex: 0 0 360px;
+    flex: 0 0 440px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -252,6 +252,100 @@
     margin-bottom: 2px;
   }
 
+  /* ---------- typed expression blocks ---------- */
+  .blocks { display: flex; flex-direction: column; gap: 10px; }
+  .block {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: slideIn .5s ease forwards;
+  }
+  .block.formula {
+    font-family: "Cambria Math", "STIX Two Math", Georgia, serif;
+    font-size: 19px;
+    text-align: center;
+    background: #0c0c0c;
+    border: 1px solid #333;
+  }
+  .block.formula .caption {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+  }
+  .block.analogy { background: #101418; border-left: 3px solid #4da3ff; color: #cfe3ff; }
+  .block.example { background: #141210; border-left: 3px solid #ffd24d; color: #ffeec2; }
+  .block.example .title { font-weight: 700; color: #ffd24d; margin-bottom: 4px; font-size: 13px; }
+  .block.quote { background: #0a0f0a; border-left: 3px solid #57d98a; color: #d2f5e0; font-style: italic; }
+  .block.quote .source { font-style: normal; font-size: 11px; color: #57d98a; margin-top: 6px; text-align: right; }
+  .block.callout { border: 1px dashed #ff8c00; color: #ffce85; background: #141005; }
+  .block.callout.tone-warn { border-color: #ff4d4d; color: #ffb3b3; background: #140505; }
+  .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+  .steps li {
+    display: flex; gap: 10px; align-items: flex-start;
+    opacity: 0; transform: translateX(-12px);
+    animation: slideIn .45s ease forwards;
+    background: #0d0d0d; border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    flex: 0 0 22px; height: 22px; border-radius: 50%;
+    background: var(--orange-fill); color: #000;
+    font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  table.block-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .block-table th { background: #1c1c1c; }
+  .block-table th, .block-table td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+  .block.chart-block { background: #0b0b0b; border: 1px solid #262626; }
+  .block.chart-block .chart-title { font-size: 12px; color: #bbb; margin-bottom: 6px; }
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .bar-rect { transform: scaleY(0); transform-origin: bottom; animation: growUp .8s ease forwards; }
+  @keyframes growUp { to { transform: scaleY(1); } }
+  .line-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.2s ease forwards; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .block.quiz { background: #0d0d14; border: 1px solid #3a3a5a; }
+  table.symtab { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .symtab th { color: #888; font-weight: 400; text-align: left; padding: 2px 6px; border-bottom: 1px dashed #333; font-size: 11px; }
+  .symtab td { padding: 3px 6px; border-bottom: 1px solid #1c1c1c; vertical-align: top; color: #ccc; }
+  .symtab td.sym { font-family: "Cambria Math", Georgia, serif; color: #ffce85; white-space: nowrap; font-size: 14px; }
+  .symtab td.kind { color: #4da3ff; white-space: nowrap; }
+  .block.formula .caption { margin-bottom: 0; }
+  .block-video { width: 100%; max-height: 380px; border-radius: 6px; background: #000; display: block; }
+  .block.quiz .q { color: #c9c9ff; }
+  .block.quiz button {
+    margin-top: 8px; background: #222244; color: #fff;
+    border: 1px solid #556; border-radius: 6px;
+    padding: 5px 10px; cursor: pointer; font-size: 12px;
+  }
+  .block.quiz .hint { font-size: 12px; color: #888; margin-top: 4px; }
+  .block.quiz .answer { display: none; margin-top: 8px; color: #9fd89f; border-top: 1px dashed #333; padding-top: 8px; }
+  .block.quiz.revealed .answer { display: block; animation: fadeIn .4s ease; }
+  .block.quiz.revealed button { display: none; }
+
+  .mathcol {
+    flex: 0 0 300px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .mathcol .mtitle {
+    font-size: 11px;
+    letter-spacing: .5px;
+    color: #888;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #262626;
+    flex: 0 0 auto;
+  }
+  .mathcol .block.formula { font-size: 16px; text-align: left; }
   .diagram-wrap {
     flex: 1;
     min-width: 0;
@@ -371,6 +465,7 @@
       <div class="ancestor-row" id="ancestorRow"></div>
       <div class="main-content" id="mainContent">
         <div class="lecture" id="lecture"></div>
+        <div class="mathcol" id="mathcol"></div>
         <div class="diagram-wrap">
           <svg id="diagram" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
@@ -387,11 +482,12 @@
 <script>
 "use strict";
 
-const TREE = {"id": "机器学习-root", "name": "机器学习", "summary": "让计算机从数据中自动学习规律，而不是由人显式编写全部规则。", "explanation": ["机器学习是让计算机从数据中自动学习规律，而不是由人显式编写所有规则。", "它通常包含数据准备、特征工程、模型训练和评估四个阶段。", "核心对象是数据集、模型、损失函数和优化算法。"], "is_primitive": false, "primitive_kind": null, "contrast": ["传统编程", "显式规则系统"], "set_relations": [{"subject": "机器学习", "relation": "superset_of", "object": "数据集", "note": "机器学习以数据集为输入素材"}, {"subject": "机器学习", "relation": "superset_of", "object": "特征工程", "note": "特征工程是机器学习流程的一部分"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型训练", "note": "模型训练是机器学习的核心阶段"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型评估", "note": "模型评估是机器学习流程的一部分"}], "temporal_relations": [{"before": "特征工程", "after": "模型训练", "kind": "before", "note": "特征工程先于模型训练"}, {"before": "模型训练", "after": "模型评估", "kind": "before", "note": "模型训练得到模型后再评估"}], "spatial_relations": [], "children": [{"id": "数据集-leaf", "name": "数据集", "summary": "由样本组成的集合，每个样本可表示为向量或矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "特征工程-node", "name": "特征工程", "summary": "把原始数据转换成适合模型学习的特征向量。", "explanation": ["特征工程把原始数据转换成适合模型学习的数值特征。", "常见操作是构造特征向量、处理缺失值、标准化。"], "is_primitive": false, "primitive_kind": null, "contrast": ["手工特征"], "set_relations": [{"subject": "特征向量", "relation": "element_of", "object": "实数向量空间", "note": "特征向量是实数向量空间的元素"}], "temporal_relations": [{"before": "缺失值处理", "after": "标准化", "kind": "before", "note": "先处理缺失值再标准化"}], "spatial_relations": [], "children": [{"id": "特征向量-leaf", "name": "特征向量", "summary": "n 维实数向量，是模型输入的基本数学对象。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "缺失值处理-leaf", "name": "缺失值处理", "summary": "对数据集中空值进行删除或填充，属于集合清洗操作。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "标准化-leaf", "name": "标准化", "summary": "将特征缩放到均值为 0、方差为 1 的实数区间。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型训练-node", "name": "模型训练", "summary": "通过优化损失函数调整模型参数，使预测误差最小。", "explanation": ["模型训练通过前向传播计算预测，再根据损失函数计算误差。", "梯度下降算法迭代更新参数，逐步降低损失。"], "is_primitive": false, "primitive_kind": null, "contrast": ["推理/预测"], "set_relations": [{"subject": "模型", "relation": "element_of", "object": "函数空间", "note": "模型可看作一个函数"}, {"subject": "损失函数", "relation": "element_of", "object": "函数空间", "note": "损失函数也是函数空间中的元素"}, {"subject": "梯度下降", "relation": "element_of", "object": "优化算法集合", "note": "梯度下降属于迭代优化算法集合"}], "temporal_relations": [{"before": "前向传播", "after": "损失计算", "kind": "before", "note": "先前向传播再计算损失"}, {"before": "损失计算", "after": "梯度计算", "kind": "before", "note": "损失计算后反向传播求梯度"}, {"before": "梯度计算", "after": "参数更新", "kind": "before", "note": "得到梯度后更新参数"}], "spatial_relations": [], "children": [{"id": "模型-leaf", "name": "模型", "summary": "可看作函数 f(x;θ)，将输入向量映射到输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失函数-leaf", "name": "损失函数", "summary": "评价预测值与真实值差距的数学函数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "前向传播-leaf", "name": "前向传播", "summary": "按网络结构逐层计算输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失计算-leaf", "name": "损失计算", "summary": "将预测与标签代入损失函数得到标量误差。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度计算-leaf", "name": "梯度计算", "summary": "计算损失关于参数的导数/偏导数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "参数更新-leaf", "name": "参数更新", "summary": "用 θ ← θ - η·grad 更新参数向量。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度下降-leaf", "name": "梯度下降", "summary": "一种迭代优化算法，沿负梯度方向更新参数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": ["随机梯度下降"], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型评估-node", "name": "模型评估", "summary": "在未见过的测试集上衡量模型泛化能力。", "explanation": ["模型评估使用测试集计算准确率等指标。", "混淆矩阵可以细看每一类别的预测情况。"], "is_primitive": false, "primitive_kind": null, "contrast": ["训练集表现"], "set_relations": [{"subject": "测试集", "relation": "subset_of", "object": "完整数据集", "note": "测试集是从完整数据中划分出的子集"}, {"subject": "准确率", "relation": "element_of", "object": "实数", "note": "准确率是一个 0 到 1 之间的实数"}], "temporal_relations": [{"before": "模型训练", "after": "测试集评估", "kind": "before", "note": "训练完成后才做评估"}], "spatial_relations": [], "children": [{"id": "测试集-leaf", "name": "测试集", "summary": "独立于训练集的样本子集。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "准确率-leaf", "name": "准确率", "summary": "正确预测数 / 样本总数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "混淆矩阵-leaf", "name": "混淆矩阵", "summary": "行表示真实类别、列表示预测类别的计数矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
+const TREE = {"id": "机器学习-root", "name": "机器学习", "summary": "让计算机从数据中自动学习规律，而不是由人显式编写全部规则。", "explanation": ["机器学习是让计算机从数据中自动学习规律，而不是由人显式编写所有规则。", "它通常包含数据准备、特征工程、模型训练和评估四个阶段。", "核心对象是数据集、模型、损失函数和优化算法。"], "is_primitive": false, "primitive_kind": null, "contrast": ["传统编程", "显式规则系统"], "blocks": [], "set_relations": [{"subject": "机器学习", "relation": "superset_of", "object": "数据集", "note": "机器学习以数据集为输入素材"}, {"subject": "机器学习", "relation": "superset_of", "object": "特征工程", "note": "特征工程是机器学习流程的一部分"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型训练", "note": "模型训练是机器学习的核心阶段"}, {"subject": "机器学习", "relation": "superset_of", "object": "模型评估", "note": "模型评估是机器学习流程的一部分"}], "temporal_relations": [{"before": "特征工程", "after": "模型训练", "kind": "before", "note": "特征工程先于模型训练"}, {"before": "模型训练", "after": "模型评估", "kind": "before", "note": "模型训练得到模型后再评估"}], "spatial_relations": [], "children": [{"id": "数据集-leaf", "name": "数据集", "summary": "由样本组成的集合，每个样本可表示为向量或矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "特征工程-node", "name": "特征工程", "summary": "把原始数据转换成适合模型学习的特征向量。", "explanation": ["特征工程把原始数据转换成适合模型学习的数值特征。", "常见操作是构造特征向量、处理缺失值、标准化。"], "is_primitive": false, "primitive_kind": null, "contrast": ["手工特征"], "blocks": [], "set_relations": [{"subject": "特征向量", "relation": "element_of", "object": "实数向量空间", "note": "特征向量是实数向量空间的元素"}], "temporal_relations": [{"before": "缺失值处理", "after": "标准化", "kind": "before", "note": "先处理缺失值再标准化"}], "spatial_relations": [], "children": [{"id": "特征向量-leaf", "name": "特征向量", "summary": "n 维实数向量，是模型输入的基本数学对象。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "缺失值处理-leaf", "name": "缺失值处理", "summary": "对数据集中空值进行删除或填充，属于集合清洗操作。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "标准化-leaf", "name": "标准化", "summary": "将特征缩放到均值为 0、方差为 1 的实数区间。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型训练-node", "name": "模型训练", "summary": "通过优化损失函数调整模型参数，使预测误差最小。", "explanation": ["模型训练通过前向传播计算预测，再根据损失函数计算误差。", "梯度下降算法迭代更新参数，逐步降低损失。"], "is_primitive": false, "primitive_kind": null, "contrast": ["推理/预测"], "blocks": [], "set_relations": [{"subject": "模型", "relation": "element_of", "object": "函数空间", "note": "模型可看作一个函数"}, {"subject": "损失函数", "relation": "element_of", "object": "函数空间", "note": "损失函数也是函数空间中的元素"}, {"subject": "梯度下降", "relation": "element_of", "object": "优化算法集合", "note": "梯度下降属于迭代优化算法集合"}], "temporal_relations": [{"before": "前向传播", "after": "损失计算", "kind": "before", "note": "先前向传播再计算损失"}, {"before": "损失计算", "after": "梯度计算", "kind": "before", "note": "损失计算后反向传播求梯度"}, {"before": "梯度计算", "after": "参数更新", "kind": "before", "note": "得到梯度后更新参数"}], "spatial_relations": [], "children": [{"id": "模型-leaf", "name": "模型", "summary": "可看作函数 f(x;θ)，将输入向量映射到输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失函数-leaf", "name": "损失函数", "summary": "评价预测值与真实值差距的数学函数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "前向传播-leaf", "name": "前向传播", "summary": "按网络结构逐层计算输出。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "损失计算-leaf", "name": "损失计算", "summary": "将预测与标签代入损失函数得到标量误差。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度计算-leaf", "name": "梯度计算", "summary": "计算损失关于参数的导数/偏导数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "参数更新-leaf", "name": "参数更新", "summary": "用 θ ← θ - η·grad 更新参数向量。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "梯度下降-leaf", "name": "梯度下降", "summary": "一种迭代优化算法，沿负梯度方向更新参数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": ["随机梯度下降"], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "模型评估-node", "name": "模型评估", "summary": "在未见过的测试集上衡量模型泛化能力。", "explanation": ["模型评估使用测试集计算准确率等指标。", "混淆矩阵可以细看每一类别的预测情况。"], "is_primitive": false, "primitive_kind": null, "contrast": ["训练集表现"], "blocks": [], "set_relations": [{"subject": "测试集", "relation": "subset_of", "object": "完整数据集", "note": "测试集是从完整数据中划分出的子集"}, {"subject": "准确率", "relation": "element_of", "object": "实数", "note": "准确率是一个 0 到 1 之间的实数"}], "temporal_relations": [{"before": "模型训练", "after": "测试集评估", "kind": "before", "note": "训练完成后才做评估"}], "spatial_relations": [], "children": [{"id": "测试集-leaf", "name": "测试集", "summary": "独立于训练集的样本子集。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "准确率-leaf", "name": "准确率", "summary": "正确预测数 / 样本总数。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "混淆矩阵-leaf", "name": "混淆矩阵", "summary": "行表示真实类别、列表示预测类别的计数矩阵。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
 
 const rootTitle = document.getElementById("root-title");
 const ancestorRow = document.getElementById("ancestorRow");
 const lecture = document.getElementById("lecture");
+const mathcol = document.getElementById("mathcol");
 const childrenRow = document.getElementById("childrenRow");
 const diagram = document.getElementById("diagram");
 const prevBtn = document.getElementById("prevBtn");
@@ -464,6 +560,122 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+/* ---------- typed expression blocks ---------- */
+
+function renderBlocksHTML(blocks) {
+  if (!blocks || !blocks.length) return "";
+  return '<div class="blocks">' + blocks.map((b, i) => renderBlock(b, i)).join("") + "</div>";
+}
+
+function blockOpen(b, i) {
+  const tone = b.tone === "warn" ? " tone-warn" : "";
+  const kind = b.type === "chart" ? "chart-block" : b.type;
+  return '<div class="block ' + kind + tone + '" style="animation-delay:' + (0.7 + i * 0.25) + 's">';
+}
+
+function symbolsHTML(symbols) {
+  if (!symbols || !symbols.length) return "";
+  const rows = symbols.map(s => '<tr><td class="sym">' + escapeHtml(s.sym || "") + '</td><td class="kind">' + escapeHtml(s.kind || "") + '</td><td>' + escapeHtml(s.meaning || "") + "</td></tr>").join("");
+  return '<table class="symtab"><thead><tr><th>符号</th><th>类型</th><th>含义</th></tr></thead><tbody>' + rows + "</tbody></table>";
+}
+
+function renderBlock(b, i) {
+  if (!b || !b.type) return "";
+  switch (b.type) {
+    case "formula": {
+      const cap = b.caption ? '<div class="caption">' + escapeHtml(b.caption) + "</div>" : "";
+      return blockOpen(b, i) + escapeHtml(b.text || "") + cap + symbolsHTML(b.symbols) + "</div>";
+    }
+    case "analogy":
+      return blockOpen(b, i) + '<div class="block-label">类比</div>' + escapeHtml(b.text || "") + "</div>";
+    case "example":
+      return blockOpen(b, i) + '<div class="block-label">例子</div>' +
+        (b.title ? '<div class="title">' + escapeHtml(b.title) + "</div>" : "") +
+        escapeHtml(b.text || "") + "</div>";
+    case "quote":
+      return blockOpen(b, i) + '<div class="block-label">原文引用</div>“' + escapeHtml(b.text || "") +
+        '”' + (b.source ? '<div class="source">—— ' + escapeHtml(b.source) + "</div>" : "") + "</div>";
+    case "callout":
+      return blockOpen(b, i) + '<div class="block-label">' + (b.tone === "warn" ? "注意" : "关键点") + "</div>" + escapeHtml(b.text || "") + "</div>";
+    case "steps":
+      return blockOpen(b, i) + '<div class="block-label">步骤</div><ol class="steps">' +
+        (b.items || []).map((s, j) =>
+          '<li style="animation-delay:' + (0.9 + j * 0.3) + 's"><span>' + escapeHtml(s) + "</span></li>"
+        ).join("") + "</ol></div>";
+    case "table": {
+      const cols = b.columns || [];
+      const head = cols.map(c => "<th>" + escapeHtml(c) + "</th>").join("");
+      const rows = (b.rows || []).map(r =>
+        "<tr>" + r.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>"
+      ).join("");
+      return blockOpen(b, i) + '<table class="block-table"><thead><tr>' + head +
+        "</tr></thead><tbody>" + rows + "</tbody></table></div>";
+    }
+    case "chart":
+      return blockOpen(b, i) + (b.title ? '<div class="chart-title">' + escapeHtml(b.title) + "</div>" : "") +
+        chartSVG(b) + "</div>";
+    case "video":
+      return blockOpen(b, i) + (b.caption ? '<div class="chart-title">' + escapeHtml(b.caption) + "</div>" : "") +
+        '<video class="block-video" controls autoplay loop muted playsinline src="' + escapeHtml(b.src || "") + '"></video></div>';
+    case "quiz":
+      return blockOpen(b, i) + '<div class="block-label">自测</div><div class="q">' + escapeHtml(b.question || "") + "</div>" +
+        (b.hint ? '<div class="hint">提示：' + escapeHtml(b.hint) + "</div>" : "") +
+        '<button type="button">显示答案</button><div class="answer">' + escapeHtml(b.answer || "") + "</div></div>";
+    default:
+      return "";
+  }
+}
+
+function chartSVG(b) {
+  const data = (b.data || []).filter(d => typeof d.value === "number");
+  if (!data.length) return "";
+  const W = 400, H = 170, padL = 44, padB = 34, padT = 14;
+  const innerW = W - padL - 12, innerH = H - padT - padB;
+  const maxV = Math.max.apply(null, data.map(d => d.value).concat([0]));
+  const minV = Math.min.apply(null, data.map(d => d.value).concat([0]));
+  const span = (maxV - minV) || 1;
+  const y = v => padT + innerH * (1 - (v - minV) / span);
+  const labels = data.map(d => escapeHtml(String(d.label == null ? "" : d.label)));
+  let body = "";
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + innerH * (1 - g / 4);
+    const gv = minV + span * g / 4;
+    body += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - 12) + '" y2="' + gy + '" stroke="#222" stroke-width="1"/>';
+    body += '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" fill="#888" font-size="10" text-anchor="end">' + (Math.round(gv * 100) / 100) + "</text>";
+  }
+  if (b.chart === "line") {
+    const pts = data.map((d, i) => {
+      const x = padL + innerW * (data.length === 1 ? 0.5 : i / (data.length - 1));
+      return [x, y(d.value)];
+    });
+    body += '<polyline class="line-path" points="' + pts.map(p => p.join(",")).join(" ") + '" fill="none" stroke="#ff8c00" stroke-width="2.5"/>';
+    pts.forEach((p, i) => {
+      body += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="#ff8c00"><animate attributeName="r" from="0" to="4" begin="' + (0.6 + i * 0.25) + 's" dur="0.3s" fill="freeze"/></circle>';
+      body += '<text x="' + p[0] + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  } else {
+    const n = data.length;
+    const slot = innerW / n;
+    const bw = Math.min(54, slot * 0.6);
+    data.forEach((d, i) => {
+      const x = padL + slot * i + (slot - bw) / 2;
+      const y0 = y(Math.max(d.value, 0)), y1 = y(Math.min(d.value, 0));
+      const h = Math.max(2, Math.abs(y1 - y0));
+      const top = Math.min(y0, y1);
+      body += '<rect class="bar-rect" x="' + x + '" y="' + top + '" width="' + bw + '" height="' + h + '" fill="#ff8c00" style="animation-delay:' + (0.8 + i * 0.25) + 's"><title>' + labels[i] + ": " + d.value + "</title></rect>";
+      body += '<text x="' + (x + bw / 2) + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  }
+  return '<svg class="chart-svg" viewBox="0 0 ' + W + " " + H + '" role="img">' + body + "</svg>";
+}
+
+// quiz reveal (delegated, works for every rendered node)
+lecture.addEventListener("click", ev => {
+  const btn = ev.target.closest(".block.quiz button");
+  if (!btn) return;
+  btn.closest(".block.quiz").classList.add("revealed");
+});
+
 /* ---------- state ---------- */
 
 let currentIndex = 0;
@@ -518,11 +730,19 @@ function renderCurrent() {
       ${(node.explanation || []).map(s => `<div class="sentence">${escapeHtml(s)}</div>`).join("")}
     </div>
     ${contrastTitle}
+    ${renderBlocksHTML((node.blocks || []).filter(b => !b || b.type !== "formula"))}
   `;
+  const formulas = (node.blocks || []).filter(b => b && b.type === "formula");
+  mathcol.innerHTML = formulas.length
+    ? '<div class="mtitle">公式与状态方程</div>' + renderBlocksHTML(formulas)
+    : '';
   // Restart CSS animation by toggling a class.
   lecture.classList.remove("fade-swap");
   void lecture.offsetWidth;
   lecture.classList.add("fade-swap");
+  mathcol.classList.remove("fade-swap");
+  void mathcol.offsetWidth;
+  mathcol.classList.add("fade-swap");
 
   // Lower: child nodes, grey, no extra explanation
   childrenRow.innerHTML = "";

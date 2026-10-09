@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "concept-animator"
+version = "0.1.0"
+description = "Render a concept tree JSON into a standalone animated HTML explainer page."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["visualization", "concept-tree", "html", "education", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Education",
+    "Topic :: Multimedia :: Graphics",
+]
+# The tool itself is standard-library only. `manim` is an optional extra that is
+# needed solely to re-render the scene scripts under concept_animator/.
+dependencies = []
+
+[project.optional-dependencies]
+manim = ["manim>=0.18"]
+
+[project.scripts]
+concept-animator = "concept_animator.cli:main"
+
+[tool.setuptools]
+packages = ["concept_animator"]
+
+[tool.setuptools.package-data]
+concept_animator = ["py.typed"]
