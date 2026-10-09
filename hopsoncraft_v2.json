@@ -1,0 +1,1429 @@
+{
+  "id": "root",
+  "name": "HopsonCraft 体素引擎",
+  "summary": "把一个传统 C++ 体素引擎逐层拆到数学原语，再映射为 GPU 张量计算。",
+  "explanation": [
+    "HopsonCraft：C++ + OpenGL + SFML，premake 构建，无引擎依赖。",
+    "走读方法：每个子系统拆到『物理实体或数学抽象』才停——数据结构必须给出数学模型。",
+    "终点是 NARP T-vx：CPU 管线逐段换成 GPU 张量算子。"
+  ],
+  "is_primitive": false,
+  "primitive_kind": null,
+  "contrast": [
+    "Minecraft (Java)",
+    "Unity 体素插件"
+  ],
+  "blocks": [
+    {
+      "type": "quote",
+      "text": "纯 C++ + OpenGL + SFML, premake 构建, 无引擎依赖",
+      "source": "走读笔记 · 仓库状态"
+    },
+    {
+      "type": "callout",
+      "text": "读源码注意：新旧两套 MeshBuilder 文件并存，认旧命名那套。",
+      "tone": "warn"
+    },
+    {
+      "type": "steps",
+      "items": [
+        "① 现象层：体素世界如何组织（Section/Full_Chunk/Map）",
+        "② 生成层：地形从哪来（噪声 + 串行 mutex）",
+        "③ 渲染层：画面怎么出来（MeshBuilder）",
+        "④ 交互层：挖一格发生什么（Raycast→setBlock→重建）",
+        "⑤ 映射层：以上全部搬进 GPU 张量（NARP）",
+        "⑥ 账本层：交换了什么开销"
+      ]
+    },
+    {
+      "type": "quiz",
+      "question": "本次走读的拆解终止条件是什么？",
+      "hint": "两类原语",
+      "answer": "物理实体（如 VAO）或数学简单抽象（集合、函数、双射、哈希函数……）；且数据结构必须拆到其数学模型（如 Map=(h,A,α)），容器名不算终点。"
+    }
+  ],
+  "set_relations": [
+    {
+      "subject": "HopsonCraft 体素引擎",
+      "relation": "superset_of",
+      "object": "体素数据结构",
+      "note": ""
+    },
+    {
+      "subject": "HopsonCraft 体素引擎",
+      "relation": "superset_of",
+      "object": "Terrain_Generator",
+      "note": ""
+    },
+    {
+      "subject": "HopsonCraft 体素引擎",
+      "relation": "superset_of",
+      "object": "MeshBuilder",
+      "note": ""
+    },
+    {
+      "subject": "HopsonCraft 体素引擎",
+      "relation": "superset_of",
+      "object": "挖掘交互",
+      "note": ""
+    },
+    {
+      "subject": "HopsonCraft 体素引擎",
+      "relation": "superset_of",
+      "object": "NARP 张量化映射",
+      "note": ""
+    }
+  ],
+  "temporal_relations": [
+    {
+      "before": "Terrain_Generator",
+      "after": "MeshBuilder",
+      "kind": "before",
+      "note": "先有数据再有画面"
+    }
+  ],
+  "spatial_relations": [],
+  "children": [
+    {
+      "id": "data",
+      "name": "体素数据结构",
+      "summary": "三层组织：Section(16³张量) → Full_Chunk(垂直列) → Map(哈希表)。",
+      "explanation": [
+        "世界不是无限网格，而是三层数学结构的复合。",
+        "每层职责单一：Section 存值、Full_Chunk 管高度、Map 管无限平面。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [],
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "层",
+            "数学模型",
+            "职责"
+          ],
+          "rows": [
+            [
+              "Section",
+              "(C, L) ∈ T₄₀₉₆ × T₄₀₉₆",
+              "存方块态与光照态"
+            ],
+            [
+              "Full_Chunk",
+              "v: ℤ≥₀ → Section",
+              "垂直索引"
+            ],
+            [
+              "Map",
+              "(h, A, α)，h: ℤ²→ℤ_m",
+              "水平平面的无限性"
+            ]
+          ]
+        },
+        {
+          "type": "analogy",
+          "text": "乐高世界：底板（Section）摞成柱（Full_Chunk），柱子用坐标查目录（Map）。目录只记『哪些柱子已搬进屋』——没搬的柱子不存在，也不占地方。"
+        }
+      ],
+      "set_relations": [
+        {
+          "subject": "体素数据结构",
+          "relation": "superset_of",
+          "object": "Section",
+          "note": ""
+        },
+        {
+          "subject": "体素数据结构",
+          "relation": "superset_of",
+          "object": "Map 哈希表",
+          "note": ""
+        }
+      ],
+      "temporal_relations": [],
+      "spatial_relations": [
+        {
+          "subject": "Section",
+          "relation": "inside",
+          "object": "Full_Chunk",
+          "note": "垂直列"
+        }
+      ],
+      "children": [
+        {
+          "id": "section",
+          "name": "Section = (C, L)",
+          "summary": "16³ 体素段：方块张量与光照张量的有序对。",
+          "explanation": [
+            "数学定义：Section = (C, L)，C,L ∈ T := {0..255}^[16]³。",
+            "双张量分离的原因：写主体不同——C 由生成/交互写，L 由光照传播独立更新。"
+          ],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "Section = (C, L),  C,L ∈ T = 𝔹₈⁴⁰⁹⁶, |T| = 256⁴⁰⁹⁶",
+              "caption": "双张量有序对；单段状态空间上界",
+              "symbols": [
+                {
+                  "sym": "(C, L)",
+                  "kind": "有序对（双张量）",
+                  "meaning": "方块态与光照态，同形 [16]³"
+                },
+                {
+                  "sym": "T = 𝔹₈⁴⁰⁹⁶",
+                  "kind": "张量空间",
+                  "meaning": "4096 字节全部可能取值"
+                },
+                {
+                  "sym": "|T| = 256⁴⁰⁹⁶",
+                  "kind": "标量（基数）",
+                  "meaning": "单段状态空间大小（≈10⁹⁸⁶⁸）"
+                }
+              ]
+            },
+            {
+              "type": "video",
+              "src": "media/videos/manim_scene/480p15/SectionSigma.mp4",
+              "caption": "Manim：σ 双射——坐标现场计算，不占存储"
+            },
+            {
+              "type": "quiz",
+              "question": "点/坐标占多少存储？",
+              "hint": "σ⁻¹ 现场反解",
+              "answer": "零。坐标由 σ⁻¹(i)=(i mod 16, (i÷16) mod 16, i÷256) 现场算出；唯一存储是每格 1 字节的值（4KB）。稠密税：空气也交 1 字节，换 O(1) 无分支寻址。"
+            },
+            {
+              "type": "formula",
+              "text": "Lₜ₊₁(p) = max(Lₜ(p), max_{q∈N₆(p)} Lₜ(q) − 1),  L* = limₜ→∞ Lₜ",
+              "caption": "光照传播=逐点松弛到不动点：每格向邻居借光再衰减1——BFS 单调收敛，天然 kernel 化",
+              "symbols": [
+                {
+                  "sym": "Lₜ(p)",
+                  "kind": "标量（0..15）",
+                  "meaning": "格 p 在第 t 轮传播的光强"
+                },
+                {
+                  "sym": "N₆(p)",
+                  "kind": "集合",
+                  "meaning": "p 的 6 个面邻居坐标"
+                },
+                {
+                  "sym": "− 1",
+                  "kind": "常数衰减",
+                  "meaning": "每传一格光强减 1"
+                },
+                {
+                  "sym": "L*",
+                  "kind": "不动点",
+                  "meaning": "迭代收敛的终态光照（存在且唯一：单调有界）"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": [
+            {
+              "id": "idx",
+              "name": "索引双射 σ",
+              "summary": "行主序三维→一维压缩。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "formula",
+                  "text": "σ(x,y,z)=x+16(y+16z),  σ(3,7,12)=3187",
+                  "caption": "乘加双射，无除法无冲突；GPU 同布局零转换",
+                  "symbols": [
+                    {
+                      "sym": "σ",
+                      "kind": "双射",
+                      "meaning": "三维坐标 ↔ 一维偏移，可逆无冲突"
+                    },
+                    {
+                      "sym": "x,y,z",
+                      "kind": "标量（整数）",
+                      "meaning": "格子在段内的坐标，各 ∈ [0,16)"
+                    },
+                    {
+                      "sym": "3187",
+                      "kind": "标量（偏移）",
+                      "meaning": "σ(3,7,12) 的值：内存中的字节位置"
+                    }
+                  ]
+                },
+                {
+                  "type": "callout",
+                  "text": "『布局不变』是 NARP 映射的前提：GPU 侧沿用同一 σ。",
+                  "tone": "key"
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            },
+            {
+              "id": "tspace",
+              "name": "稠密张量空间 T",
+              "summary": "4096 字节连续内存的逐点取值空间。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "analogy",
+                  "text": "T 像一本 4096 位、每位 256 候选字的手稿空间：任一 Section 快照是一种写法；palette 压缩利用的正是『实际写法远少于可能写法』的低熵。"
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "fchunk",
+          "name": "Full_Chunk",
+          "summary": "高度方向的索引函数。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "Full_Chunk(c) = ⟨Section(c,v)⟩_{v=0..H−1}",
+              "caption": "c=(cx,cz)；高度维被此层吸收，Map 才只需 ℤ² 键",
+              "symbols": [
+                {
+                  "sym": "c",
+                  "kind": "向量（整数对）",
+                  "meaning": "水平坐标 (cx,cz) ∈ ℤ²"
+                },
+                {
+                  "sym": "v",
+                  "kind": "标量（序号）",
+                  "meaning": "垂直方向第 v 段，v ∈ [0,H)"
+                },
+                {
+                  "sym": "H",
+                  "kind": "常数",
+                  "meaning": "世界高度的 Section 段数"
+                },
+                {
+                  "sym": "⟨·⟩",
+                  "kind": "序列构造",
+                  "meaning": "按 v 排列的 Section 序列"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "map",
+          "name": "Map 哈希表",
+          "summary": "无限平面的按需加载：开放寻址哈希表三件套。",
+          "explanation": [
+            "Map 必须拆到 (h, A, α) 三件套才允许终止。",
+            "键是 ℤ² 水平坐标，因为高度已被 Full_Chunk 吸收。"
+          ],
+          "is_primitive": false,
+          "primitive_kind": null,
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "插入: Aₜ₊₁ = Aₜ[i ↦ c], nₜ₊₁ = nₜ+1,  i = h(c) ∨ probe(Aₜ, i)",
+              "caption": "哈希表状态方程：probe 沿冲突序列找空位",
+              "symbols": [
+                {
+                  "sym": "Aₜ",
+                  "kind": "数组（定长）",
+                  "meaning": "桶数组，长 m"
+                },
+                {
+                  "sym": "i ↦ c",
+                  "kind": "单点写入",
+                  "meaning": "桶 i 放入 chunk 引用 c"
+                },
+                {
+                  "sym": "nₜ",
+                  "kind": "标量（计数）",
+                  "meaning": "已用桶数 +1"
+                },
+                {
+                  "sym": "probe",
+                  "kind": "函数",
+                  "meaning": "冲突时沿序列找空位"
+                }
+              ]
+            },
+            {
+              "type": "formula",
+              "text": "Map = (h, A), h: ℤ² → ℤ_m, A: [m] → Full_Chunk ∪ {⊥}",
+              "caption": "⊥ = 未加载；命中 = 已加载",
+              "symbols": [
+                {
+                  "sym": "h",
+                  "kind": "函数",
+                  "meaning": "哈希函数 ℤ² → ℤ_m（多对一）"
+                },
+                {
+                  "sym": "A",
+                  "kind": "数组",
+                  "meaning": "桶数组 [m] → Full_Chunk ∪ {⊥}"
+                },
+                {
+                  "sym": "⊥",
+                  "kind": "空值标记",
+                  "meaning": "该桶未加载"
+                }
+              ]
+            },
+            {
+              "type": "video",
+              "src": "media/videos/manim_scene2/480p15/HashProbe.mp4",
+              "caption": "Manim：哈希定位与冲突探测"
+            },
+            {
+              "type": "quiz",
+              "question": "为什么键是 ℤ² 不是 ℤ³？",
+              "hint": "值是什么",
+              "answer": "值是 Full_Chunk（整列 Section），高度维已在值里，键只需水平坐标。"
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": [
+            {
+              "id": "hash",
+              "name": "哈希函数 h",
+              "summary": "无限平面压进有限桶域的多对一映射。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "formula",
+                  "text": "h(cx,cz)=(a·cx+b·cz) mod m, a,b,m 两两素",
+                  "caption": "O(1)；鸽笼原理 ⟹ 冲突必然存在",
+                  "symbols": [
+                    {
+                      "sym": "a, b",
+                      "kind": "常数（整数）",
+                      "meaning": "与 m 两两素，保证分布均匀"
+                    },
+                    {
+                      "sym": "mod m",
+                      "kind": "取模运算",
+                      "meaning": "压进桶域 [0,m)"
+                    }
+                  ]
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            },
+            {
+              "id": "bucket",
+              "name": "桶数组 A",
+              "summary": "长度 m=2^k 的连续数组。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "formula",
+                  "text": "A: [m] → Full_Chunk ∪ {⊥};  i mod m = i ∧ (m−1)",
+                  "caption": "m 取 2 的幂：取模降为位与",
+                  "symbols": [
+                    {
+                      "sym": "m",
+                      "kind": "标量（2 的幂）",
+                      "meaning": "桶数；mod 降为位与 i ∧ (m−1)"
+                    },
+                    {
+                      "sym": "∧",
+                      "kind": "按位与",
+                      "meaning": "取模的位运算等价形式"
+                    }
+                  ]
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            },
+            {
+              "id": "alpha",
+              "name": "装载因子 α",
+              "summary": "均摊性能的唯一指挥棒。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "formula",
+                  "text": "扩容: αₜ > α₀ ⟹ mₜ₊₁ = 2mₜ, Aₜ₊₁ = rehash(Aₜ),  n 不变",
+                  "caption": "扩容转移方程：m 翻倍后重排全部键，α 恢复 ≤ α₀/2",
+                  "symbols": [
+                    {
+                      "sym": "α₀",
+                      "kind": "常数",
+                      "meaning": "扩容阈值 ≈0.7"
+                    },
+                    {
+                      "sym": "mₜ₊₁ = 2mₜ",
+                      "kind": "转移",
+                      "meaning": "桶数翻倍"
+                    },
+                    {
+                      "sym": "rehash",
+                      "kind": "函数",
+                      "meaning": "全部键按新 m 重排"
+                    }
+                  ]
+                },
+                {
+                  "type": "formula",
+                  "text": "α = n/m,  E[探测] ≈ 1/(1−α)",
+                  "caption": "α→1 发散 ⟹ α₀≈0.7 扩容",
+                  "symbols": [
+                    {
+                      "sym": "n",
+                      "kind": "标量（计数）",
+                      "meaning": "已存键数"
+                    },
+                    {
+                      "sym": "m",
+                      "kind": "标量",
+                      "meaning": "桶数"
+                    },
+                    {
+                      "sym": "E[探测]",
+                      "kind": "期望值",
+                      "meaning": "平均探测次数；α→1 时发散"
+                    }
+                  ]
+                },
+                {
+                  "type": "video",
+                  "src": "media/videos/manim_scene/480p15/LoadFactor.mp4",
+                  "caption": "Manim：α 增大 → 探测次数发散"
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "terrain",
+      "name": "Terrain_Generator",
+      "summary": "噪声+biome+树生成地形；mutex 强制串行是痛点。",
+      "explanation": [
+        "地形 = 噪声场的函数：terrain = f(noise, biome, tree)。",
+        "mutex 使任意时刻只有一个 chunk 在生成——多核也白搭。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [],
+      "blocks": [
+        {
+          "type": "formula",
+          "text": "C₀|ₙₑw = terrain(ℤ³) := g(noise(p), biome),  ΔS = S ⊎ (c ↦ C₀|ₙₑw)",
+          "caption": "生成=对新 chunk 的初始化方程：从空(⊥)到确定初值",
+          "symbols": [
+            {
+              "sym": "C₀|ₙₑw",
+              "kind": "张量",
+              "meaning": "新 chunk 的初始方块态"
+            },
+            {
+              "sym": "g",
+              "kind": "复合函数",
+              "meaning": "噪声→biome→树 的逐点生成函数"
+            },
+            {
+              "sym": "noise(p)",
+              "kind": "标量场",
+              "meaning": "确定性伪随机值 ∈ [−1,1]"
+            },
+            {
+              "sym": "biome(cx,cz)",
+              "kind": "查表函数",
+              "meaning": "按水平坐标取生态参数"
+            },
+            {
+              "sym": "⊎",
+              "kind": "二元算子",
+              "meaning": "把新段并入全局状态（⊥→值）"
+            }
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "terrain: ℤ³ → 𝔹₈,  terrain(p) = g(noise(p), biome(cx,cz))",
+          "caption": "确定性：同输入必同输出（与整数 DDA 同一铁律）",
+          "symbols": [
+            {
+              "sym": "ℤ³",
+              "kind": "定义域",
+              "meaning": "三维整数坐标（格心）"
+            },
+            {
+              "sym": "𝔹₈",
+              "kind": "值域",
+              "meaning": "8 位方块编号"
+            },
+            {
+              "sym": "noise / biome",
+              "kind": "函数",
+              "meaning": "见子节点定义"
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "text": "痛点数字①：mutex 串行生成。GPU 噪声 kernel 并行直写 chunk 张量后消失。",
+          "tone": "warn"
+        },
+        {
+          "type": "quote",
+          "text": "Terrain_Generator(CPU): 噪声+biome+树, 用 mutex 强制一次只生成一个 chunk (串行!)",
+          "source": "走读笔记 · 架构事实"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "噪声给出高度场",
+            "biome 调材质与形状",
+            "撒树装饰",
+            "写入 chunk，释放锁"
+          ]
+        }
+      ],
+      "set_relations": [],
+      "temporal_relations": [
+        {
+          "before": "噪声函数",
+          "after": "写入 chunk",
+          "kind": "before",
+          "note": ""
+        }
+      ],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "noise",
+          "name": "噪声函数",
+          "summary": "确定性伪随机场：Perlin/Simplex 类。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "noise: ℝ² → [−1,1], 确定性（无隐状态）",
+              "caption": "GPU 化即改写为 kernel 并行求值",
+              "symbols": [
+                {
+                  "sym": "noise",
+                  "kind": "函数（确定性）",
+                  "meaning": "无隐状态的伪随机场：同输入必同输出"
+                },
+                {
+                  "sym": "[−1,1]",
+                  "kind": "值域（闭区间）",
+                  "meaning": "归一化噪声值"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "mutex",
+          "name": "mutex",
+          "summary": "互斥锁 = 原子标志 + 等待队列。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "mutex = (flag ∈ {0,1}, Q: 等待线程队列)",
+              "caption": "拆到表示层：不是黑盒『锁』",
+              "symbols": [
+                {
+                  "sym": "flag",
+                  "kind": "标量（原子位）",
+                  "meaning": "0=空闲 1=持有"
+                },
+                {
+                  "sym": "Q",
+                  "kind": "队列",
+                  "meaning": "被阻塞线程的等待队列"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "mesh",
+      "name": "MeshBuilder",
+      "summary": "CPU 网格化：4096 块×6 面邻接测试 → 3 类 mesh → VAO。",
+      "explanation": [
+        "渲染前必须把张量翻译成三角形网格——这是 CPU 范式的根本开销来源。",
+        "耗时 0.01~5ms 抖动（痛点数字②），层级跳过优化只治标。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [
+        "ray-march 渲染（NARP 中整体删除）"
+      ],
+      "blocks": [
+        {
+          "type": "video",
+          "src": "media/videos/manim_scene2/480p15/MeshVsRaymarch.mp4",
+          "caption": "Manim：MeshBuilder 与 ray-march 范式对比"
+        },
+        {
+          "type": "formula",
+          "text": "Mₜ = mesh(Cₜ)  (派生态);  dirty(Cₜ₊₁≠Cₜ) ⟹ Mₜ₊₁ = mesh(Cₜ₊₁) 整段重算",
+          "caption": "派生状态方程：mesh 不是世界的一部分，是 C 的函数——NARP 删除的就是这个昂贵的派生",
+          "symbols": [
+            {
+              "sym": "Mₜ",
+              "kind": "派生数据（网格）",
+              "meaning": "三角形列表；不是世界状态的成员"
+            },
+            {
+              "sym": "mesh",
+              "kind": "函数",
+              "meaning": "4096×6 邻接测试 → 三类 mesh"
+            },
+            {
+              "sym": "dirty",
+              "kind": "布尔谓词",
+              "meaning": "C 是否被改过：改过才重算 M"
+            }
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "遍历 4096 格",
+            "6 面邻接测试（暴露面才生成几何）",
+            "分流 solid/flora/liquid",
+            "上传 VAO"
+          ]
+        },
+        {
+          "type": "chart",
+          "chart": "bar",
+          "title": "单次重建耗时区间（ms）",
+          "data": [
+            {
+              "label": "最快",
+              "value": 0.01
+            },
+            {
+              "label": "P50",
+              "value": 0.4
+            },
+            {
+              "label": "P95",
+              "value": 2.1
+            },
+            {
+              "label": "最慢",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "",
+            "MeshBuilder",
+            "ray-march"
+          ],
+          "rows": [
+            [
+              "持久数据",
+              "mesh + VAO（张量之外）",
+              "仅 4KB 张量"
+            ],
+            [
+              "改一格",
+              "整段重建+重传",
+              "无操作"
+            ],
+            [
+              "可见性",
+              "Frustum 剔除另算",
+              "天然只见可见体素"
+            ]
+          ]
+        }
+      ],
+      "set_relations": [
+        {
+          "subject": "MeshBuilder",
+          "relation": "superset_of",
+          "object": "邻接测试",
+          "note": ""
+        }
+      ],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "adj",
+          "name": "邻接测试",
+          "summary": "两格状态→该面是否生成的布尔函数。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "visible(a,b) = ¬opaque(b), a,b ∈ 𝔹₈",
+              "caption": "4096×6 次调用；透明块是分支源头",
+              "symbols": [
+                {
+                  "sym": "a, b",
+                  "kind": "标量（方块编号）",
+                  "meaning": "当前格与相邻格的值 ∈ 𝔹₈"
+                },
+                {
+                  "sym": "opaque",
+                  "kind": "布尔函数",
+                  "meaning": "是否不透明（液体/植物=透明→必生成面）"
+                },
+                {
+                  "sym": "¬",
+                  "kind": "逻辑非",
+                  "meaning": "邻居透明则该面可见"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "vao",
+          "name": "VAO",
+          "summary": "OpenGL 顶点数组对象（GPU 侧容器）。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "physical",
+          "contrast": [],
+          "blocks": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "dig",
+      "name": "挖掘交互",
+      "summary": "唯一的写路径：输入→AABB Raycast→setBlock→触发重建。",
+      "explanation": [
+        "一次挖掘的代价链：O(射线) 定位 + O(4096×6) 重建。",
+        "写路径窄而重——NARP 用 88B 动作包把整条链搬进 GPU。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [],
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "SPlaying 采集输入",
+            "CPU Raycast(AABB) 求交",
+            "setBlock 写张量",
+            "触发整段 mesh 重建"
+          ]
+        },
+        {
+          "type": "analogy",
+          "text": "激光笔照巧克力墙：抠掉一块（setBlock），整面墙的包装纸重贴（重建）。ray-march 的世界根本没有包装纸。"
+        },
+        {
+          "type": "quiz",
+          "question": "为什么改一格要付整段重建？",
+          "hint": "mesh 的粒度",
+          "answer": "mesh 按 Section 粒度组织；改 1 格也重算整段 4096×6 邻接并重传 VAO。"
+        }
+      ],
+      "set_relations": [],
+      "temporal_relations": [
+        {
+          "before": "Raycast 命中",
+          "after": "mesh 重建",
+          "kind": "before",
+          "note": ""
+        }
+      ],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "raycast",
+          "name": "Raycast (AABB)",
+          "summary": "射线与格子的求交。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "ray ∈ ℝ³; GPU 版: 整数 DDA, 逐位可复现（铁律1）",
+              "caption": "浮点→整数：确定性从概率变成定理",
+              "symbols": [
+                {
+                  "sym": "ray",
+                  "kind": "射线（点+方向）",
+                  "meaning": "视线参数化的射线"
+                },
+                {
+                  "sym": "DDA",
+                  "kind": "算法（整数域）",
+                  "meaning": "逐格行进求交：同射线必得同命中（铁律1）"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "setblock",
+          "name": "setBlock",
+          "summary": "单点写操作。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "Cₜ₊₁ = Cₜ ⊕ (p ↦ v),  p = DDA(aₜ.ray),  v = 0 (挖) ∨ blockID (放)",
+              "caption": "点更新方程：一次挖掘只改一个坐标的字节；⊕ 表示单点覆写",
+              "symbols": [
+                {
+                  "sym": "Cₜ",
+                  "kind": "张量",
+                  "meaning": "某 Section 的方块态 ∈ 𝔹₈⁴⁰⁹⁶"
+                },
+                {
+                  "sym": "p",
+                  "kind": "向量（整数坐标）",
+                  "meaning": "命中格子 (x,y,z) ∈ [16]³"
+                },
+                {
+                  "sym": "v",
+                  "kind": "标量",
+                  "meaning": "写入值 ∈ 𝔹₈：0=挖空，blockID=放置"
+                },
+                {
+                  "sym": "⊕",
+                  "kind": "覆写算子",
+                  "meaning": "单点覆写：仅 p 处改变，其余逐位不变"
+                },
+                {
+                  "sym": "DDA(aₜ.ray)",
+                  "kind": "函数",
+                  "meaning": "整数 DDA：射线 → 命中坐标 p"
+                }
+              ]
+            },
+            {
+              "type": "formula",
+              "text": "setBlock: ([16]³ × 𝔹₈) → T → T",
+              "caption": "一次状态转移函数",
+              "symbols": [
+                {
+                  "sym": "[16]³ × 𝔹₈",
+                  "kind": "参数（坐标×值）",
+                  "meaning": "写入位置与写入值"
+                },
+                {
+                  "sym": "T → T",
+                  "kind": "类型签名",
+                  "meaning": "状态到状态的映射：纯状态转移"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "narp",
+      "name": "NARP 张量化映射",
+      "summary": "逐行替换：存储 ping-pong、生成并行、交互 88B 包、渲染删 mesh。",
+      "explanation": [
+        "映射表是走读的核心产出：CPU 每一行都有 GPU 对偶。",
+        "唯一的范式级删除：MeshBuilder → ray-march。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [
+        "传统 CPU 管线"
+      ],
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "传统 (CPU)",
+            "NARP (GPU)"
+          ],
+          "rows": [
+            [
+              "Array3D<CBlock,16> 存储",
+              "RWByteAddressBuffer 4KB/chunk, ping-pong, 布局不变"
+            ],
+            [
+              "Array3D<CLight> 光照",
+              "光照传播 kernel 写状态张量"
+            ],
+            [
+              "CPU 噪声 (mutex 串行)",
+              "GPU 噪声 kernel 并行直写"
+            ],
+            [
+              "CPU raycast + setBlock",
+              "88B 包 + 整数 DDA"
+            ],
+            [
+              "MeshBuilder 重建+VAO",
+              "整体删除: 片元 ray-march"
+            ],
+            [
+              "CPU Frustum 剔除",
+              "chunk 掩码位运算"
+            ],
+            [
+              "CPU AABB 碰撞",
+              "整数张量算子 (TensorSnake 同构)"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "text": "MeshBuilder 是被删除而非被优化——没有 mesh、没有上传。",
+          "tone": "key"
+        }
+      ],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "rwbuf",
+          "name": "RWByteAddressBuffer",
+          "summary": "按字节寻址的可读写缓冲。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "(Rₜ, Wₜ) ⟼ (Wₜ, Rₜ)   每帧交换读写页",
+              "caption": "ping-pong 交换方程：读旧写新，帧末原子互换，无锁",
+              "symbols": [
+                {
+                  "sym": "Rₜ / Wₜ",
+                  "kind": "指针",
+                  "meaning": "当前读页 / 写页（各 4KB）"
+                },
+                {
+                  "sym": "⟼",
+                  "kind": "交换",
+                  "meaning": "帧末互换：读旧写新，免同步"
+                }
+              ]
+            },
+            {
+              "type": "formula",
+              "text": "chunk ⟷ 4KB page, ping-pong 双缓冲",
+              "caption": "读写页交替，无同步屏障",
+              "symbols": [
+                {
+                  "sym": "(Rₜ, Wₜ)",
+                  "kind": "有序对（指针）",
+                  "meaning": "当前读页/写页"
+                },
+                {
+                  "sym": "⟼",
+                  "kind": "交换算子",
+                  "meaning": "帧末原子互换：读旧写新，无锁"
+                }
+              ]
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "pkg",
+          "name": "88B 动作包",
+          "summary": "动词表 {move,jump,dig,place} 的定长编码。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "动作 1B + 射线 24B ⊂ 88B 定长包",
+              "caption": "定长 ⟹ GPU 端无解析分支",
+              "symbols": [
+                {
+                  "sym": "1B / 24B / 88B",
+                  "kind": "字节宽度",
+                  "meaning": "动作枚举 / 射线参数 / 定长包"
+                },
+                {
+                  "sym": "⊂",
+                  "kind": "子集关系",
+                  "meaning": "字段装进定长包，无变长解析"
+                }
+              ]
+            },
+            {
+              "type": "quote",
+              "text": "行动词表: {move,jump,dig(ray),place(ray+blockID)}, 88B 即全覆盖",
+              "source": "走读笔记 · state_store.hpp 输入②"
+            }
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "march",
+          "name": "ray-march 渲染",
+          "summary": "片元着色器沿视线在张量上行进。",
+          "explanation": [
+            "渲染 = 对张量的即时求值，无中间产物。"
+          ],
+          "is_primitive": false,
+          "primitive_kind": null,
+          "contrast": [],
+          "blocks": [
+            {
+              "type": "formula",
+              "text": "render(Sₜ) = Σ_{t∈[t₀,t₁]} march(σ⁻¹(t), Cₜ, Lₜ),  Sₜ₊₁ 与 render 无关",
+              "caption": "渲染求值方程：纯函数，逐采样点积分，不落入状态",
+              "symbols": [
+                {
+                  "sym": "render",
+                  "kind": "纯函数",
+                  "meaning": "状态 → 画面，不改变 S"
+                },
+                {
+                  "sym": "Σ_{t∈[t₀,t₁]}",
+                  "kind": "采样积分",
+                  "meaning": "沿射线在参数区间内逐点累积"
+                },
+                {
+                  "sym": "march",
+                  "kind": "函数",
+                  "meaning": "单采样点求值：查 C、乘 L"
+                },
+                {
+                  "sym": "σ⁻¹(t)",
+                  "kind": "逆双射",
+                  "meaning": "射线上 t 处 → 格子坐标"
+                }
+              ]
+            },
+            {
+              "type": "formula",
+              "text": "color(ray) = march(σ⁻¹, C, L; t₀..t₁)",
+              "caption": "几何=约定，数据=张量，其余现场算",
+              "symbols": [
+                {
+                  "sym": "color",
+                  "kind": "函数（纯）",
+                  "meaning": "视线 → 颜色；无副作用"
+                },
+                {
+                  "sym": "σ⁻¹",
+                  "kind": "逆双射",
+                  "meaning": "偏移 → 三维坐标"
+                },
+                {
+                  "sym": "t₀..t₁",
+                  "kind": "参数区间",
+                  "meaning": "射线走过的采样范围"
+                },
+                {
+                  "sym": "Σ",
+                  "kind": "求和（积分）",
+                  "meaning": "沿射线的逐采样点累积"
+                }
+              ]
+            },
+            {
+              "type": "chart",
+              "chart": "line",
+              "title": "单帧开销对比（ms）",
+              "data": [
+                {
+                  "label": "模拟",
+                  "value": 0.05
+                },
+                {
+                  "label": "tensor core",
+                  "value": 0.5
+                },
+                {
+                  "label": "DP4A",
+                  "value": 4
+                }
+              ]
+            }
+          ],
+          "set_relations": [
+            {
+              "subject": "ray-march 渲染",
+              "relation": "disjoint_from",
+              "object": "MeshBuilder",
+              "note": "互斥范式"
+            }
+          ],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": [
+            {
+              "id": "mlp",
+              "name": "MLP 64→64→32",
+              "summary": "体素渲染用小网络。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "formula",
+                  "text": "1080p × MLP(64→64→32) ≈ 16 GFLOP/帧",
+                  "caption": "≈0.5ms(tensor core) / 3-5ms(DP4A)",
+                  "symbols": [
+                    {
+                      "sym": "MLP(64→64→32)",
+                      "kind": "层规格",
+                      "meaning": "输入64/隐64/输出32 的多层感知机"
+                    },
+                    {
+                      "sym": "16 GFLOP/帧",
+                      "kind": "标量（计算量）",
+                      "meaning": "每帧浮点运算总量"
+                    }
+                  ]
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            },
+            {
+              "id": "lod",
+              "name": "LOD 降采样",
+              "summary": "按距离降采样削峰值。",
+              "explanation": [],
+              "is_primitive": true,
+              "primitive_kind": "math",
+              "contrast": [],
+              "blocks": [
+                {
+                  "type": "formula",
+                  "text": "采样密度 ρ(d) ∝ 1/d",
+                  "caption": "render_graph 按 LOD 削峰",
+                  "symbols": [
+                    {
+                      "sym": "ρ(d)",
+                      "kind": "函数",
+                      "meaning": "距离 d 处的 ray-march 采样密度"
+                    },
+                    {
+                      "sym": "∝",
+                      "kind": "正比",
+                      "meaning": "远稀近密，削渲染峰值"
+                    }
+                  ]
+                }
+              ],
+              "set_relations": [],
+              "temporal_relations": [],
+              "spatial_relations": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stateeq",
+      "name": "全局状态方程",
+      "summary": "整个引擎 = 一个离散动力系统：状态 (C, L, Map)，动作 aₜ 驱动转移。",
+      "explanation": [
+        "把所有子系统统一成一个视角：世界状态 S = (C, L, Map)，玩家动作 aₜ ∈ 动作词表。",
+        "每帧是一次状态转移 Sₜ₊₁ = F(Sₜ, aₜ)；渲染不是状态，是对状态的求值。",
+        "F 确定性 ⟹ 同 (S₀, a₀..aₜ) 必回放同一世界——这是 NARP 可复现铁律的数学表述。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [],
+      "blocks": [
+        {
+          "type": "formula",
+          "text": "Sₜ = (Cₜ, Lₜ, Mapₜ),   Sₜ₊₁ = F(Sₜ, aₜ),  aₜ ∈ {move, jump, dig, place}",
+          "caption": "全局状态转移方程；渲染 render(Sₜ) 不改变状态",
+          "symbols": [
+            {
+              "sym": "Sₜ",
+              "kind": "元组（全局状态）",
+              "meaning": "世界在帧 t 的完整状态 (Cₜ, Lₜ, Mapₜ)"
+            },
+            {
+              "sym": "Cₜ",
+              "kind": "张量场",
+              "meaning": "全部已加载 Section 的方块态：每段 ∈ T=𝔹₈⁴⁰⁹⁶"
+            },
+            {
+              "sym": "Lₜ",
+              "kind": "张量场",
+              "meaning": "全部光照态，与 C 同形"
+            },
+            {
+              "sym": "Mapₜ",
+              "kind": "哈希表",
+              "meaning": "已加载 chunk 的索引 (h, A, n)"
+            },
+            {
+              "sym": "F",
+              "kind": "函数（确定性）",
+              "meaning": "状态转移函数：同 (S,a) 永远得同 S′"
+            },
+            {
+              "sym": "aₜ",
+              "kind": "动作（定长记录）",
+              "meaning": "帧 t 的玩家动作，∈ {move,jump,dig,place}，88B 包"
+            },
+            {
+              "sym": "t",
+              "kind": "整数（离散时间）",
+              "meaning": "帧号，从 0 起的离散序数"
+            }
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "F = Gen ⊕ Dig ⊪ Light:  Cₜ₊₁ = Cₜ ∪ ΔC(aₜ),  Lₜ₊₁ = Light*(Cₜ₊₁)",
+          "caption": "三个子转移的复合：生成分配新段、挖掘点写、光照收敛到不动点",
+          "symbols": [
+            {
+              "sym": "Gen / Dig / Light",
+              "kind": "函数",
+              "meaning": "三个子转移：生成新段 / 点写 / 光照传播"
+            },
+            {
+              "sym": "⊕",
+              "kind": "二元算子",
+              "meaning": "并：把生成的新段并入状态"
+            },
+            {
+              "sym": "ΔC(aₜ)",
+              "kind": "增量张量",
+              "meaning": "动作 aₜ 引起的方块改动（通常只 1 格）"
+            },
+            {
+              "sym": "Light*",
+              "kind": "不动点算子",
+              "meaning": "对 C 反复松弛直到 L 收敛（见光照方程）"
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "text": "可复现性定理：F 确定性 ∧ 整数域 ⟹ ∀t: Sₜ = F^(t)(S₀, a₀..ₜ₋₁) 逐位相同。回放=重算，不需要存档。",
+          "tone": "key"
+        },
+        {
+          "type": "quiz",
+          "question": "为什么说『渲染不改变状态』很重要？",
+          "hint": "想想 F 和 render 的分工",
+          "answer": "render(Sₜ) 是纯函数求值（无副作用），状态只被 F 改变。于是渲染可以任意重试/降采样/换后端，都不会污染世界——CPU/GPU 双实现可对拍验证。"
+        }
+      ],
+      "set_relations": [
+        {
+          "subject": "全局状态方程",
+          "relation": "superset_of",
+          "object": "挖掘交互",
+          "note": ""
+        }
+      ],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    }
+  ]
+}

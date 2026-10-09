@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>可视化方案效果对比 · 同一数据三种渲染</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+  body { margin:0; background:#0a0a0f; color:#eee; font-family:"Segoe UI","Microsoft YaHei",sans-serif; }
+  h1 { font-size:18px; padding:14px 20px 4px; margin:0; }
+  .sub { color:#888; font-size:13px; padding:0 20px 12px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px 20px; }
+  .card { background:#111; border:1px solid #262626; border-radius:10px; padding:10px; }
+  .card h2 { font-size:14px; margin:2px 4px 8px; color:#ffb45e; }
+  .card .note { font-size:12px; color:#888; margin:4px 4px 0; }
+  .chart { width:100%; height:340px; }
+  .wide { grid-column:1 / -1; }
+</style>
+</head>
+<body>
+<h1>可视化方案效果对比 —— 同一数据集，三种渲染</h1>
+<div class="sub">数据：随时间收敛的损失曲线（折线）· 各段重建耗时（柱状）· 1/(1−α) 响应曲面（3D）。需联网加载 CDN。</div>
+
+<div class="grid">
+  <div class="card"><h2>① ECharts 折线（动画生长，交互缩放/悬停）</h2><div id="e-line" class="chart"></div>
+    <div class="note">推荐嵌入讲解页：动画流畅、体积可内嵌离线</div></div>
+  <div class="card"><h2>② ECharts 柱状（MeshBuilder 耗时区间）</h2><div id="e-bar" class="chart"></div>
+    <div class="note">柱体生长动画 + tooltip</div></div>
+  <div class="card wide"><h2>③ ECharts-GL 3D 曲面（echarts-gl surface）</h2><div id="e-3d" class="chart" style="height:420px"></div>
+    <div class="note">可拖拽旋转/缩放；适合"值随两个参数变化"的概念（本例 z = 1/(1−α(x,y)) 响应面）</div></div>
+  <div class="card wide"><h2>④ Plotly 3D（Python 侧同款效果，plotly.py 直出）</h2><div id="p-3d" class="chart" style="height:420px"></div>
+    <div class="note">Python: fig = go.Figure(go.Surface(z=Z)); fig.write_html('x.html', include_plotlyjs='cdn') —— LLM 数据管线首选</div></div>
+</div>
+
+<script>
+const t = [], loss = [];
+for (let i = 0; i <= 100; i += 5) { t.push(i); loss.push(+(2.4*Math.exp(-i/28)+0.2).toFixed(3)); }
+
+echarts.init(document.getElementById('e-line')).setOption({
+  backgroundColor:'transparent', textStyle:{color:'#ccc'},
+  tooltip:{trigger:'axis'},
+  xAxis:{type:'category',data:t.map(String),name:'迭代',axisLine:{lineStyle:{color:'#555'}}},
+  yAxis:{type:'value',name:'损失',splitLine:{lineStyle:{color:'#222'}}},
+  series:[{type:'line',data:loss,smooth:true,symbol:'none',lineStyle:{color:'#ff8c00',width:3},
+    areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(255,140,0,.35)'},{offset:1,color:'rgba(255,140,0,0)'}]}},
+    animationDuration:1200}]
+});
+
+echarts.init(document.getElementById('e-bar')).setOption({
+  backgroundColor:'transparent', textStyle:{color:'#ccc'},
+  tooltip:{},
+  xAxis:{type:'category',data:['最快','P50','P95','最慢'],axisLine:{lineStyle:{color:'#555'}}},
+  yAxis:{type:'value',name:'ms',splitLine:{lineStyle:{color:'#222'}}},
+  series:[{type:'bar',data:[0.01,0.4,2.1,5],itemStyle:{color:'#4da3ff',borderRadius:[4,4,0,0]},
+    animationDelay:i=>i*200,label:{show:true,position:'top',color:'#aaa'}}]
+});
+
+// 3D surface z = 1/(1-α) capped, over (α, m/1000)
+const N = 40, xd = [], yd = [], Z = [];
+for (let i = 0; i <= N; i++) xd.push(+(0.2 + 0.75*i/N).toFixed(3));
+for (let j = 0; j <= N; j++) yd.push(+(1 + 9*j/N).toFixed(2));
+for (let i = 0; i <= N; i++) { const row = [];
+  for (let j = 0; j <= N; j++) { const a = xd[i]; row.push(+Math.min(20, 1/(1-a)).toFixed(2)); }
+  Z.push(row); }
+echarts.init(document.getElementById('e-3d')).setOption({
+  backgroundColor:'transparent', textStyle:{color:'#ccc'},
+  tooltip:{},
+  visualMap:{show:false,min:1,max:20,inRange:{color:['#1a3a6a','#ff8c00','#ff4d4d']}},
+  xAxis3D:{type:'category',data:xd,name:'装载因子 α'},
+  yAxis3D:{type:'category',data:yd,name:'桶数 m/1000'},
+  zAxis3D:{type:'value',name:'探测次数'},
+  grid3D:{axisLine:{lineStyle:{color:'#555'}},axisPointer:{lineStyle:{color:'#ff8c00'}},
+    viewControl:{autoRotate:true,autoRotateSpeed:8}},
+  series:[{type:'surface',wireframe:{show:true,lineStyle:{color:'#000',width:0.4}},data:Z.map((r,i)=>r.map((v,j)=>[xd[i],yd[j],v]))}]
+});
+
+// Plotly 3D — same surface, python-side equivalent
+const Zp = Z;
+Plotly.newPlot('p-3d', [{type:'surface', z:Zp, x:xd, y:yd, colorscale:'Portland',
+  colorbar:{tickfont:{color:'#aaa'}}}],
+  {title:{text:'Plotly Surface（plotly.py 同款）',font:{color:'#eee',size:14}},
+   paper_bgcolor:'#111', plot_bgcolor:'#111', font:{color:'#ccc'},
+   scene:{xaxis:{title:'装载因子 α',color:'#aaa',gridcolor:'#333'},
+          yaxis:{title:'桶数 m/1000',color:'#aaa',gridcolor:'#333'},
+          zaxis:{title:'探测次数',color:'#aaa',gridcolor:'#333'},
+          camera:{eye:{x:1.6,y:1.4,z:0.9}}},
+   margin:{l:0,r:0,b:0,t:40}},
+  {responsive:true});
+</script>
+</body>
+</html>

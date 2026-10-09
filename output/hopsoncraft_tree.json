@@ -1,0 +1,189 @@
+{
+  "id": "HopsonCraft 体素引擎源码走读-b94df32b",
+  "name": "HopsonCraft 体素引擎源码走读",
+  "summary": "HopsonCraft 体素引擎通过 C++ 实现，结合 NARP 张量化映射，将体素世界数据与操作转化为 GPU 可执行的张量流程，实现高效并行渲染与物理模拟。",
+  "explanation": [
+    "HopsonCraft 是一个基于 C++ 和 OpenGL 的体素引擎，采用纯本地代码实现，无外部依赖，其核心架构以 16³ 的 Section 为单位组织世界数据，天然形成稠密张量结构。",
+    "通过 NARP（Neural Array Representation Protocol）将传统 CPU 侧的体素与光照数据迁移至 GPU，利用 RWByteAddressBuffer 和张量操作实现高效并行处理，显著优化了地形生成、碰撞检测和光照传播的性能。"
+  ],
+  "is_primitive": false,
+  "primitive_kind": null,
+  "contrast": [
+    "传统 CPU 体素引擎（串行、高延迟、频繁重建）",
+    "现代 GPU 张量化体素系统（并行、低延迟、无 mesh 上传）"
+  ],
+  "blocks": [
+    {
+      "type": "table",
+      "columns": [
+        "传统(CPU)",
+        "NARP(GPU)"
+      ],
+      "rows": [
+        [
+          "Array3D<CBlock,16> chunk 存储",
+          "RWByteAddressBuffer 4KB/chunk, ping-pong, 布局不变"
+        ],
+        [
+          "Array3D<CLight> 光照",
+          "光照传播 kernel 写状态张量"
+        ],
+        [
+          "CPU 噪声地形(mutex 串行)",
+          "GPU 噪声 kernel 并行直写 chunk 张量"
+        ],
+        [
+          "CPU raycast + setBlock",
+          "88B 包: 动作枚举+射线; GPU 整数 DDA (逐位可复现, 铁律1精确域)"
+        ],
+        [
+          "MeshBuilder 重建+VAO 上传",
+          "整体删除: 片元 ray-march 体素张量, 无 mesh 无上传"
+        ],
+        [
+          "CPU Frustum 剔除",
+          "chunk 掩码位运算 / ray-march 天然只碰可见体素"
+        ],
+        [
+          "CPU AABB 碰撞",
+          "整数张量算子 (TensorSnake tick 同构)"
+        ]
+      ]
+    },
+    {
+      "type": "formula",
+      "text": "L = 16³ × 1 byte = 4096 bytes",
+      "caption": "一个 Section 的体素数据大小"
+    },
+    {
+      "type": "steps",
+      "items": [
+        "玩家输入动作（如挖、放）",
+        "GPU 接收 88B 动作包，执行整数 DDA 射线投射",
+        "在体素张量中定位并修改状态（setBlock）",
+        "GPU 通过 ray-march 算法仅更新可见体素，无需重建 mesh",
+        "光照通过 kernel 传播至 m_light 状态张量"
+      ]
+    }
+  ],
+  "set_relations": [
+    {
+      "subject": "Section",
+      "relation": "subset_of",
+      "object": "Chunk",
+      "note": "一个 Chunk 包含多个垂直排列的 Section，Section 是 Chunk 的基本组成单元"
+    },
+    {
+      "subject": "Array3D<CBlock>",
+      "relation": "element_of",
+      "object": "Section",
+      "note": "每个 Section 内部使用三维数组存储体素数据"
+    },
+    {
+      "subject": "RWByteAddressBuffer",
+      "relation": "subset_of",
+      "object": "GPU 显存",
+      "note": "每个 4KB 缓冲区是 GPU 显存中用于体素数据交换的最小单位"
+    }
+  ],
+  "temporal_relations": [
+    {
+      "before": "Terrain_Generator",
+      "after": "MeshBuilder",
+      "kind": "before",
+      "note": "地形生成在网格构建之前完成，是世界状态的初始构建阶段"
+    },
+    {
+      "before": "MeshBuilder",
+      "after": "挖掘操作",
+      "kind": "after",
+      "note": "玩家挖掘后触发 MeshBuilder 重建，但 NARP 模式下已跳过此步骤"
+    },
+    {
+      "before": "光照传播",
+      "after": "setBlock",
+      "kind": "after",
+      "note": "体素状态更新后，光照才开始在 GPU 中传播"
+    }
+  ],
+  "spatial_relations": [
+    {
+      "subject": "Section",
+      "relation": "inside",
+      "object": "Chunk",
+      "note": "每个 Section 位于一个垂直的 Chunk 内部，构成其空间结构"
+    }
+  ],
+  "children": [
+    {
+      "id": "Section-fcbf65d4",
+      "name": "Section",
+      "summary": "一个 16³ 的三维体素块，作为数据存储的基本单元，构成世界空间的离散结构。",
+      "explanation": [],
+      "is_primitive": true,
+      "primitive_kind": "math",
+      "contrast": [],
+      "blocks": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    },
+    {
+      "id": "Array3D-c9a91210",
+      "name": "Array3D",
+      "summary": "三维数组结构，用于存储体素状态（如 CBlock）和光照信息（如 CLight），是数据层的底层表示。",
+      "explanation": [],
+      "is_primitive": true,
+      "primitive_kind": "math",
+      "contrast": [],
+      "blocks": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    },
+    {
+      "id": "Chunk-eaeccafe",
+      "name": "Chunk",
+      "summary": "一个垂直排列的 Section 列，是地图中可独立加载和渲染的最小空间单元。",
+      "explanation": [],
+      "is_primitive": true,
+      "primitive_kind": "math",
+      "contrast": [],
+      "blocks": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    },
+    {
+      "id": "MeshBuilder-4e09dada",
+      "name": "MeshBuilder",
+      "summary": "CPU 端的网格构建器，负责遍历体素邻接关系并生成三维网格，用于后续 VAO 上传。",
+      "explanation": [],
+      "is_primitive": true,
+      "primitive_kind": "physical",
+      "contrast": [],
+      "blocks": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    },
+    {
+      "id": "Terrain_Generator-f6138d0f",
+      "name": "Terrain_Generator",
+      "summary": "CPU 端的地形生成器，基于噪声和生物群系生成地形，使用互斥锁实现串行生成。",
+      "explanation": [],
+      "is_primitive": true,
+      "primitive_kind": "physical",
+      "contrast": [],
+      "blocks": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    }
+  ]
+}

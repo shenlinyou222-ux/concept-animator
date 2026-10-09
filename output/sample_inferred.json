@@ -1,0 +1,420 @@
+{
+  "id": "机器学习-root",
+  "name": "机器学习",
+  "summary": "让计算机从数据中自动学习规律，而不是由人显式编写全部规则。",
+  "explanation": [
+    "机器学习是让计算机从数据中自动学习规律，而不是由人显式编写所有规则。",
+    "它通常包含数据准备、特征工程、模型训练和评估四个阶段。",
+    "核心对象是数据集、模型、损失函数和优化算法。"
+  ],
+  "is_primitive": false,
+  "primitive_kind": null,
+  "contrast": [
+    "传统编程",
+    "显式规则系统"
+  ],
+  "set_relations": [
+    {
+      "subject": "机器学习",
+      "relation": "superset_of",
+      "object": "数据集",
+      "note": "机器学习以数据集为输入素材"
+    },
+    {
+      "subject": "机器学习",
+      "relation": "superset_of",
+      "object": "特征工程",
+      "note": "特征工程是机器学习流程的一部分"
+    },
+    {
+      "subject": "机器学习",
+      "relation": "superset_of",
+      "object": "模型训练",
+      "note": "模型训练是机器学习的核心阶段"
+    },
+    {
+      "subject": "机器学习",
+      "relation": "superset_of",
+      "object": "模型评估",
+      "note": "模型评估是机器学习流程的一部分"
+    },
+    {
+      "subject": "模型训练",
+      "relation": "subset_of",
+      "object": "机器学习",
+      "note": "由 superset_of 反向后传递推导"
+    },
+    {
+      "subject": "模型评估",
+      "relation": "subset_of",
+      "object": "机器学习",
+      "note": "由 superset_of 反向后传递推导"
+    },
+    {
+      "subject": "数据集",
+      "relation": "subset_of",
+      "object": "机器学习",
+      "note": "由 superset_of 反向后传递推导"
+    },
+    {
+      "subject": "特征工程",
+      "relation": "subset_of",
+      "object": "机器学习",
+      "note": "由 superset_of 反向后传递推导"
+    }
+  ],
+  "temporal_relations": [
+    {
+      "before": "特征工程",
+      "after": "模型训练",
+      "kind": "before",
+      "note": "特征工程先于模型训练"
+    },
+    {
+      "before": "模型训练",
+      "after": "模型评估",
+      "kind": "before",
+      "note": "模型训练得到模型后再评估"
+    },
+    {
+      "before": "特征工程",
+      "after": "模型评估",
+      "kind": "before",
+      "note": "由时间先后关系传递推导"
+    }
+  ],
+  "spatial_relations": [],
+  "children": [
+    {
+      "id": "数据集-leaf",
+      "name": "数据集",
+      "summary": "由样本组成的集合，每个样本可表示为向量或矩阵。",
+      "explanation": [],
+      "is_primitive": true,
+      "primitive_kind": "math",
+      "contrast": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "children": []
+    },
+    {
+      "id": "特征工程-node",
+      "name": "特征工程",
+      "summary": "把原始数据转换成适合模型学习的特征向量。",
+      "explanation": [
+        "特征工程把原始数据转换成适合模型学习的数值特征。",
+        "常见操作是构造特征向量、处理缺失值、标准化。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [
+        "手工特征"
+      ],
+      "set_relations": [
+        {
+          "subject": "特征向量",
+          "relation": "element_of",
+          "object": "实数向量空间",
+          "note": "特征向量是实数向量空间的元素"
+        }
+      ],
+      "temporal_relations": [
+        {
+          "before": "缺失值处理",
+          "after": "标准化",
+          "kind": "before",
+          "note": "先处理缺失值再标准化"
+        }
+      ],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "特征向量-leaf",
+          "name": "特征向量",
+          "summary": "n 维实数向量，是模型输入的基本数学对象。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "缺失值处理-leaf",
+          "name": "缺失值处理",
+          "summary": "对数据集中空值进行删除或填充，属于集合清洗操作。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "标准化-leaf",
+          "name": "标准化",
+          "summary": "将特征缩放到均值为 0、方差为 1 的实数区间。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "模型训练-node",
+      "name": "模型训练",
+      "summary": "通过优化损失函数调整模型参数，使预测误差最小。",
+      "explanation": [
+        "模型训练通过前向传播计算预测，再根据损失函数计算误差。",
+        "梯度下降算法迭代更新参数，逐步降低损失。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [
+        "推理/预测"
+      ],
+      "set_relations": [
+        {
+          "subject": "模型",
+          "relation": "element_of",
+          "object": "函数空间",
+          "note": "模型可看作一个函数"
+        },
+        {
+          "subject": "损失函数",
+          "relation": "element_of",
+          "object": "函数空间",
+          "note": "损失函数也是函数空间中的元素"
+        },
+        {
+          "subject": "梯度下降",
+          "relation": "element_of",
+          "object": "优化算法集合",
+          "note": "梯度下降属于迭代优化算法集合"
+        }
+      ],
+      "temporal_relations": [
+        {
+          "before": "前向传播",
+          "after": "损失计算",
+          "kind": "before",
+          "note": "先前向传播再计算损失"
+        },
+        {
+          "before": "损失计算",
+          "after": "梯度计算",
+          "kind": "before",
+          "note": "损失计算后反向传播求梯度"
+        },
+        {
+          "before": "梯度计算",
+          "after": "参数更新",
+          "kind": "before",
+          "note": "得到梯度后更新参数"
+        },
+        {
+          "before": "前向传播",
+          "after": "参数更新",
+          "kind": "before",
+          "note": "由时间先后关系传递推导"
+        },
+        {
+          "before": "前向传播",
+          "after": "梯度计算",
+          "kind": "before",
+          "note": "由时间先后关系传递推导"
+        },
+        {
+          "before": "损失计算",
+          "after": "参数更新",
+          "kind": "before",
+          "note": "由时间先后关系传递推导"
+        }
+      ],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "模型-leaf",
+          "name": "模型",
+          "summary": "可看作函数 f(x;θ)，将输入向量映射到输出。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "损失函数-leaf",
+          "name": "损失函数",
+          "summary": "评价预测值与真实值差距的数学函数。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "前向传播-leaf",
+          "name": "前向传播",
+          "summary": "按网络结构逐层计算输出。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "损失计算-leaf",
+          "name": "损失计算",
+          "summary": "将预测与标签代入损失函数得到标量误差。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "梯度计算-leaf",
+          "name": "梯度计算",
+          "summary": "计算损失关于参数的导数/偏导数。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "参数更新-leaf",
+          "name": "参数更新",
+          "summary": "用 θ ← θ - η·grad 更新参数向量。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "梯度下降-leaf",
+          "name": "梯度下降",
+          "summary": "一种迭代优化算法，沿负梯度方向更新参数。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [
+            "随机梯度下降"
+          ],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "模型评估-node",
+      "name": "模型评估",
+      "summary": "在未见过的测试集上衡量模型泛化能力。",
+      "explanation": [
+        "模型评估使用测试集计算准确率等指标。",
+        "混淆矩阵可以细看每一类别的预测情况。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [
+        "训练集表现"
+      ],
+      "set_relations": [
+        {
+          "subject": "测试集",
+          "relation": "subset_of",
+          "object": "完整数据集",
+          "note": "测试集是从完整数据中划分出的子集"
+        },
+        {
+          "subject": "准确率",
+          "relation": "element_of",
+          "object": "实数",
+          "note": "准确率是一个 0 到 1 之间的实数"
+        }
+      ],
+      "temporal_relations": [
+        {
+          "before": "模型训练",
+          "after": "测试集评估",
+          "kind": "before",
+          "note": "训练完成后才做评估"
+        }
+      ],
+      "spatial_relations": [],
+      "children": [
+        {
+          "id": "测试集-leaf",
+          "name": "测试集",
+          "summary": "独立于训练集的样本子集。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "准确率-leaf",
+          "name": "准确率",
+          "summary": "正确预测数 / 样本总数。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        },
+        {
+          "id": "混淆矩阵-leaf",
+          "name": "混淆矩阵",
+          "summary": "行表示真实类别、列表示预测类别的计数矩阵。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

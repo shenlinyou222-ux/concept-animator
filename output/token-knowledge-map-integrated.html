@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Token 生成机制 · 可视化知识包</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2c; --panel2:#16233b; --line:#233350;
+    --text:#e6edf7; --muted:#9db1d0; --faint:#6b7f9e;
+    --c1:#4f8ef7; --c2:#34c98e; --c3:#a78bfa; --c4:#f59e0b; --c5:#2dd4bf; --c6:#f87171;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    line-height:1.65; padding-bottom:80px;
+  }
+  .wrap{max-width:1200px; margin:0 auto; padding:0 20px;}
+
+  /* ---------- hero ---------- */
+  .hero{padding:44px 0 8px;}
+  .hero h1{font-size:30px; letter-spacing:.5px;}
+  .hero .sub{color:var(--muted); margin-top:10px; font-size:14px;}
+  .hero .conclusion{
+    margin-top:18px; padding:14px 18px; border-left:3px solid var(--c3);
+    background:var(--panel); border-radius:0 10px 10px 0; font-size:15px;
+  }
+  .chain{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:16px;}
+  .chain .p{background:var(--panel2); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; font-size:12.5px; color:var(--muted);}
+  .chain .a{color:var(--faint); font-size:12px;}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky; top:0; z-index:50; background:rgba(11,18,32,.88);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line); margin-top:26px;}
+  nav .wrap{display:flex; gap:4px; overflow-x:auto; padding:0 20px;}
+  nav a{color:var(--muted); text-decoration:none; font-size:13.5px; padding:11px 14px;
+    white-space:nowrap; border-bottom:2px solid transparent;}
+  nav a:hover{color:var(--text); border-bottom-color:var(--c3);}
+
+  /* ---------- sections ---------- */
+  section{padding:44px 0 6px;}
+  h2{font-size:21px; margin-bottom:6px;}
+  h2 .step{color:var(--c3); margin-right:8px;}
+  .sec-sub{color:var(--muted); font-size:13.5px; margin-bottom:18px;}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px;}
+  .hint{background:var(--panel); border:1px dashed var(--line); border-radius:10px;
+    padding:10px 16px; font-size:13px; color:var(--muted); margin-bottom:14px;}
+  .hint b{color:var(--text); font-weight:600;}
+
+  svg{display:block; width:100%; height:auto;}
+  svg text{font-family:inherit;}
+
+  /* pipeline svg node classes */
+  .nd{fill:#141f36;}
+  .n-enc{stroke:var(--c1); stroke-width:1.6;}
+  .n-loop{stroke:var(--c3); stroke-width:1.6;}
+  .n-out{stroke:var(--c5); stroke-width:1.6;}
+  .n-main{fill:#e8eefb; font-size:14px; font-weight:600; text-anchor:middle;}
+  .n-sub{fill:#8ea3c4; font-size:10.5px; text-anchor:middle;}
+  .flow{stroke:#7f93b8; stroke-width:1.6; fill:none;}
+  .dash{stroke:var(--c4); stroke-width:1.6; fill:none; stroke-dasharray:7 6;
+    animation:flow 1.1s linear infinite;}
+  @keyframes flow{to{stroke-dashoffset:-13;}}
+  .note-box{fill:none; stroke:#43536f; stroke-width:1; stroke-dasharray:4 4;}
+  .note-t{fill:#c6d4ec; font-size:12.5px; font-weight:600; text-anchor:middle;}
+  .note-s{fill:#7f93b8; font-size:10.5px; text-anchor:middle;}
+  .halo{paint-order:stroke; stroke:#0d1526; stroke-width:4px; stroke-linejoin:round;}
+
+  /* cluster grid */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;}
+  .cluster{background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px 16px 14px; border-top:3px solid var(--c);}
+  .cluster h3{font-size:15.5px;}
+  .cluster h3 .dot{display:inline-block; width:9px; height:9px; border-radius:50%;
+    background:var(--c); margin-right:8px;}
+  .cluster .cd{color:var(--muted); font-size:12.5px; margin:4px 0 12px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-left:3px solid var(--c); border-radius:8px; padding:5px 12px;
+    font-size:13px; cursor:pointer; transition:transform .12s, background .12s;
+    font-family:inherit;
+  }
+  .chip:hover{transform:translateY(-1px); background:#1b2a47;}
+  .chip.active{background:var(--c); color:#0b1220; font-weight:600; border-color:var(--c);}
+
+  /* detail card panel */
+  .card-panel{
+    display:none; margin-top:16px; background:var(--panel2);
+    border:1px solid var(--line); border-left:4px solid var(--c);
+    border-radius:12px; padding:18px 20px; position:relative;
+    animation:pop .18s ease-out;
+  }
+  .card-panel.open{display:block;}
+  @keyframes pop{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card-panel .close{
+    position:absolute; top:10px; right:12px; background:none; border:none;
+    color:var(--faint); font-size:16px; cursor:pointer;
+  }
+  .card-panel .close:hover{color:var(--text);}
+  .cp-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+  .cp-head h3{font-size:18px;}
+  .cp-head .en{color:var(--faint); font-size:12.5px;}
+  .tag{font-size:11.5px; padding:2px 10px; border-radius:999px;
+    background:var(--c); color:#0b1220; font-weight:600;}
+  .card-panel dl{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px 22px;}
+  .card-panel dt{font-size:12.5px; color:var(--c); margin-bottom:3px;}
+  .card-panel dd{font-size:13.5px; color:#d5e0f2;}
+  .card-panel dd code{
+    background:#0d1526; border:1px solid var(--line); border-radius:5px;
+    padding:1px 6px; font-size:12px; color:#bfe3d2;
+  }
+
+  /* tables */
+  .tbl-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:960px){ .tbl-grid{grid-template-columns:1fr;} }
+  .tbl-grid .panel{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th,td{padding:8px 10px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-weight:600; font-size:12.5px; white-space:nowrap;}
+  td:first-child{white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .wrong{color:#f8a1a1;}
+  .right{color:#8fdcb8;}
+  .tbl-title{font-size:15px; margin-bottom:10px;}
+  .tbl-title .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px;}
+
+  /* stepper */
+  .steps{display:flex; flex-wrap:wrap; gap:0; counter-reset:st;}
+  .stepcard{
+    flex:1 1 130px; position:relative; padding:14px 14px 12px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    margin:0 6px 10px 0;
+  }
+  .stepcard::before{
+    counter-increment:st; content:counter(st);
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:50%; background:var(--panel2);
+    border:1.5px solid var(--c3); color:var(--c3); font-weight:700; font-size:13px;
+    margin-bottom:8px;
+  }
+  .stepcard b{display:block; font-size:13.5px; margin-bottom:2px;}
+  .stepcard span{font-size:12px; color:var(--muted);}
+
+  /* quiz */
+  .quiz{margin-top:16px; display:grid; gap:10px;}
+  details{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:10px 16px; font-size:13.5px;
+  }
+  summary{cursor:pointer; color:var(--text); font-weight:500;}
+  summary::marker{color:var(--c3);}
+  details .ans{margin-top:8px; padding:8px 12px; background:var(--panel2);
+    border-radius:8px; color:#cfe0f5; font-size:13px;}
+
+  blockquote.final{
+    margin-top:26px; padding:18px 22px; background:var(--panel);
+    border:1px solid var(--line); border-left:3px solid var(--c5);
+    border-radius:0 12px 12px 0; font-size:15px; color:#d9e4f5;
+  }
+  footer{margin-top:50px; color:var(--faint); font-size:12px; text-align:center;}
+
+  .rnode{cursor:pointer;}
+  .rnode:hover rect{filter:brightness(1.35);}
+  .legend-t{fill:var(--muted); font-size:12px;}
+  .edge-l{font-size:11.5px; font-weight:600;}
+  /* ---------- concept engine ---------- */
+  .engine-grid{display:grid; grid-template-columns:360px 1fr; gap:14px; align-items:start;}
+  @media(max-width:1050px){.engine-grid{grid-template-columns:1fr;}}
+  .schema-panel{position:sticky; top:76px;}
+  .schema-panel h3,.traversal-panel h3{font-size:16px; margin-bottom:8px;}
+  .schema-sub{color:var(--muted); font-size:12.5px; margin-bottom:10px;}
+  .schema-code{background:#081020; border:1px solid var(--line); border-radius:10px; padding:12px; color:#cfe0f5; font-size:11.8px; line-height:1.55; overflow:auto; font-family:"Cascadia Code",Consolas,monospace;}
+  .primitive-rule{margin-top:12px; padding:12px; background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--c3); border-radius:8px; font-size:12.8px; color:#cbd8ec;}
+  .primitive-rule ul{margin:6px 0 0 18px;}
+  .primitive-rule code{background:#0d1526; padding:1px 5px; border-radius:4px;}
+  .engine-head{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
+  .engine-controls{display:flex; gap:6px; flex-wrap:wrap;}
+  .ebtn{background:var(--panel2); color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:6px 11px; font-size:12.5px; cursor:pointer; transition:all .15s;}
+  .ebtn:hover{color:var(--text); border-color:#4b608b;}
+  .ebtn.active{background:var(--c3); color:#101726; border-color:var(--c3); font-weight:700;}
+  .ebtn.primary{background:var(--c1); color:#08101f; border-color:var(--c1); font-weight:700;}
+  .tree-stage{background:#081020; border:1px solid var(--line); border-radius:12px; padding:8px; overflow:auto;}
+  #engineTreeSvg{min-width:1000px;}
+  .engine-edge{stroke:#33476d; stroke-width:1.5; fill:none;}
+  .engine-node{cursor:pointer;}
+  .engine-node rect{fill:#121f38; stroke:#61769c; stroke-width:1.5; transition:all .16s;}
+  .engine-node text{fill:#dce7f8; font-size:12.5px; text-anchor:middle; pointer-events:none;}
+  .engine-node .sub{fill:#8ba0c4; font-size:10.5px;}
+  .engine-node.terminal rect{stroke-dasharray:5 4; stroke:#4fb895;}
+  .engine-node.nonterminal rect{stroke:#8b9ec4;}
+  .engine-node.active rect{fill:#f4f7ff; stroke:var(--c3); stroke-width:2.4;}
+  .engine-node.active text{fill:#0b1220;}
+  .engine-node.active .sub{fill:#48597a;}
+  .engine-node.visited rect{fill:#182946;}
+  .engine-node:hover rect{filter:brightness(1.22);}
+  .engine-state-grid{display:grid; grid-template-columns:1.1fr 1.4fr .9fr; gap:10px; margin-top:12px;}
+  @media(max-width:900px){.engine-state-grid{grid-template-columns:1fr;}}
+  .state-card{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px;}
+  .state-title{font-size:11.8px; color:var(--faint); margin-bottom:5px;}
+  .state-value{font-size:16px; font-weight:700;}
+  .state-meta{font-size:12px; color:var(--muted); margin-top:4px;}
+  .state-metrics{font-size:14px; font-weight:700;}
+  .state-metrics .sep{color:var(--faint); margin:0 4px;}
+  .termination{margin-top:5px; font-size:12px; color:#90e2bd;}
+  .queue-list{display:flex; flex-wrap:wrap; gap:5px; min-height:30px;}
+  .queue-item{background:#0d1729; border:1px solid var(--line); border-left:3px solid var(--c1); border-radius:6px; padding:3px 8px; font-size:11.8px; color:#c6d5ee;}
+  .queue-item.terminal{border-left-color:var(--c2); color:#a6d8c4;}
+  .queue-empty{color:var(--faint); font-size:12px;}
+  .relation-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px;}
+  @media(max-width:1000px){.relation-strip{grid-template-columns:repeat(2,1fr);}}
+  .relation-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .relation-card b{display:block; font-size:13.5px; margin-bottom:3px;}
+  .relation-card span{display:block; font-size:12px; color:#bfd0ea; margin-bottom:4px;}
+  .relation-card small{color:var(--faint); font-size:11.5px;}
+  .rc-set{border-top:3px solid var(--c1);}
+  .rc-time{border-top:3px solid var(--c4);}
+  .rc-space{border-top:3px solid var(--c3);}
+  .rc-terminal{border-top:3px solid var(--c2);}
+</style>
+</head>
+<body>
+
+<div class="wrap hero">
+  <h1>Token 生成机制 · 可视化知识包</h1>
+  <p class="sub">整合自两个上游 Agent 的知识产物：Agent A《Token 生成机制·知识地图》＋ Agent B《Tokenization 知识包（卡片 / 图谱 / 对比表）》</p>
+  <div class="conclusion">
+    <b>一句话结论</b>：大模型不是一次性生成整句话，而是在当前上下文的基础上，<b>反复预测并选择下一个 Token</b>，直到命中停止条件——最终的答案，是大量局部预测连续累积的结果。
+  </div>
+  <div class="chain">
+    <span class="p">文本</span><span class="a">→</span>
+    <span class="p">Token</span><span class="a">→</span>
+    <span class="p">Token ID</span><span class="a">→</span>
+    <span class="p">向量+位置</span><span class="a">→</span>
+    <span class="p">Logits</span><span class="a">→</span>
+    <span class="p">概率分布</span><span class="a">→</span>
+    <span class="p">解码策略</span><span class="a">→</span>
+    <span class="p">下一个 Token</span><span class="a">↻</span>
+    <span class="p">追加回上下文 · 循环</span><span class="a">→</span>
+    <span class="p">停止后解码为文本</span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a href="#pipeline">① 全景流水线</a>
+    <a href="#map">② 知识地图</a>
+    <a href="#graph">③ 概念关系</a>
+    <a href="#tables">④ 对比与误区</a>
+    <a href="#path">⑤ 学习路径与自测</a>
+    <a href="#engine">⑥ 概念树引擎</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ============ ① 流水线 ============ -->
+<section id="pipeline">
+  <h2><span class="step">①</span>全景流水线：文本进，文本出</h2>
+  <p class="sec-sub">先看清全局，再下钻细节。蓝色 = 编码阶段（离线词表 + 在线切分），紫色 = 自回归生成循环（模型的核心），青色 = 输出阶段。</p>
+  <div class="hint">
+    <b>怎么读</b>：实线是数据流；<b>琥珀色虚线是循环回路</b>——每生成一个 Token 就追加回上下文再预测下一个，这是"逐 Token 生成"的全部含义。
+  </div>
+  <div class="panel">
+    <svg viewBox="0 0 1200 750" role="img" aria-label="Token 生成机制流水线图">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#7f93b8"/>
+        </marker>
+        <marker id="arrLoop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/>
+        </marker>
+        <marker id="arrOut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2dd4bf"/>
+        </marker>
+      </defs>
+
+      <!-- legend -->
+      <line x1="34" y1="30" x2="70" y2="30" class="flow" stroke-width="2"/>
+      <text x="78" y="34" class="legend-t">数据流</text>
+      <line x1="150" y1="30" x2="186" y2="30" class="dash"/>
+      <text x="194" y="34" class="legend-t">循环回路（未停止时）</text>
+
+      <!-- ===== 编码阶段 ===== -->
+      <rect x="500" y="25" width="200" height="48" rx="10" class="nd n-enc"/>
+      <text x="600" y="45" class="n-main">原始文本</text>
+      <text x="600" y="62" class="n-sub">"请解释索引为什么能加快查询"</text>
+
+      <line x1="600" y1="73" x2="600" y2="99" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="495" y="105" width="210" height="48" rx="10" class="nd n-enc"/>
+      <text x="600" y="125" class="n-main">Tokenize 切分</text>
+      <text x="600" y="142" class="n-sub">子词 · 字节 · 查词表</text>
+
+      <!-- 右侧注释：词表 -->
+      <line x1="705" y1="129" x2="878" y2="129" class="flow" stroke-dasharray="3 4" stroke-width="1"/>
+      <rect x="880" y="101" width="232" height="56" rx="8" class="note-box"/>
+      <text x="996" y="123" class="note-t">词表 Vocabulary</text>
+      <text x="996" y="141" class="note-s">BPE 离线训练产出 · ≈10 万条目</text>
+
+      <line x1="600" y1="153" x2="600" y2="179" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="495" y="185" width="210" height="48" rx="10" class="nd n-enc"/>
+      <text x="600" y="205" class="n-main">Token ID</text>
+      <text x="600" y="222" class="n-sub">整数序列（模型只认编号）</text>
+
+      <!-- 左侧注释：特殊 Token -->
+      <line x1="320" y1="209" x2="493" y2="209" class="flow" stroke-dasharray="3 4" stroke-width="1"/>
+      <rect x="88" y="181" width="230" height="56" rx="8" class="note-box"/>
+      <text x="203" y="203" class="note-t">追加特殊 Token</text>
+      <text x="203" y="221" class="note-s">BOS · EOS · PAD · 系统标记</text>
+
+      <line x1="600" y1="233" x2="600" y2="259" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="480" y="265" width="240" height="48" rx="10" class="nd n-enc"/>
+      <text x="600" y="285" class="n-main">Embedding ＋ 位置</text>
+      <text x="600" y="302" class="n-sub">向量 · 模型真正的输入</text>
+
+      <!-- 进入生成循环 -->
+      <path d="M 600,313 V 380 H 190 V 428" class="flow" marker-end="url(#arr)"/>
+
+      <!-- ===== 生成循环 ===== -->
+      <rect x="70" y="345" width="1060" height="250" rx="16" fill="none"
+            stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.55"/>
+      <text x="1120" y="372" text-anchor="end" fill="#a78bfa" font-size="13" font-weight="600">自回归生成循环 · 每次只决定一个 Token</text>
+
+      <rect x="100" y="434" width="180" height="52" rx="10" class="nd n-loop"/>
+      <text x="190" y="456" class="n-main">Transformer 注意力</text>
+      <text x="190" y="474" class="n-sub">只看过去，不看未来</text>
+
+      <line x1="280" y1="460" x2="306" y2="460" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="310" y="434" width="180" height="52" rx="10" class="nd n-loop"/>
+      <text x="400" y="456" class="n-main">Logits</text>
+      <text x="400" y="474" class="n-sub">每个候选一个分数</text>
+
+      <line x1="490" y1="460" x2="516" y2="460" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="520" y="434" width="180" height="52" rx="10" class="nd n-loop"/>
+      <text x="610" y="456" class="n-main">Softmax</text>
+      <text x="610" y="474" class="n-sub">概率分布 P(next | ctx)</text>
+
+      <line x1="700" y1="460" x2="726" y2="460" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="730" y="434" width="180" height="52" rx="10" class="nd n-loop"/>
+      <text x="820" y="456" class="n-main">解码策略</text>
+      <text x="820" y="474" class="n-sub">贪心 · T · Top-k · Top-p</text>
+
+      <line x1="910" y1="460" x2="936" y2="460" class="flow" marker-end="url(#arr)"/>
+
+      <rect x="940" y="434" width="180" height="52" rx="10" class="nd n-loop"/>
+      <text x="1030" y="456" class="n-main">下一个 Token</text>
+      <text x="1030" y="474" class="n-sub">每次仅一个</text>
+
+      <!-- 循环回路 -->
+      <path d="M 1030,486 V 545 H 190 V 492" class="dash" marker-end="url(#arrLoop)"/>
+      <text x="1043" y="516" fill="#f59e0b" font-size="12">否</text>
+      <text x="610" y="568" text-anchor="middle" fill="#f0b95e" font-size="12.5">未停止：把新 Token 追加回上下文，回到 Transformer 继续预测</text>
+
+      <!-- ===== 输出阶段 ===== -->
+      <path d="M 1120,460 H 1160 V 660 H 1100" class="flow" marker-end="url(#arrOut)"/>
+      <polygon points="1010,625 1096,660 1010,695 924,660" class="nd n-out"/>
+      <text x="1010" y="665" class="n-main" font-size="13.5">满足停止条件？</text>
+
+      <line x1="924" y1="660" x2="748" y2="660" class="flow" marker-end="url(#arrOut)"/>
+      <text x="838" y="648" text-anchor="middle" class="halo" fill="#8fdcb8" font-size="11.5">是 · EOS / 最大长度</text>
+
+      <rect x="540" y="634" width="204" height="52" rx="10" class="nd n-out"/>
+      <text x="642" y="656" class="n-main">ID 解码 · 拼接</text>
+      <text x="642" y="674" class="n-sub">无损还原文本</text>
+
+      <line x1="540" y1="660" x2="468" y2="660" class="flow" marker-end="url(#arrOut)"/>
+
+      <rect x="260" y="634" width="204" height="52" rx="10" class="nd n-out"/>
+      <text x="362" y="656" class="n-main">输出文本</text>
+      <text x="362" y="674" class="n-sub">逐 Token 流式显示</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ ② 知识地图 ============ -->
+<section id="map">
+  <h2><span class="step">②</span>知识地图：六大主题，点击概念看卡片</h2>
+  <p class="sec-sub">对应知识地图的六个分支。每个概念卡片只有四栏：定义 / 直觉 / 例子 / 边界——一次只讲一个点。</p>
+  <div class="grid" id="clusterGrid"></div>
+  <div class="card-panel" id="cardPanel">
+    <button class="close" onclick="closeCard()" title="关闭">✕</button>
+    <div class="cp-head">
+      <span class="tag" id="cpTag"></span>
+      <h3 id="cpName"></h3>
+      <span class="en" id="cpEn"></span>
+    </div>
+    <dl>
+      <div><dt>📌 定义</dt><dd id="cpDef"></dd></div>
+      <div><dt>💡 直觉</dt><dd id="cpInt"></dd></div>
+      <div><dt>🔍 例子</dt><dd id="cpEx"></dd></div>
+      <div><dt>⚠️ 边界</dt><dd id="cpEdge"></dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ ③ 概念关系 ============ -->
+<section id="graph">
+  <h2><span class="step">③</span>概念关系：谁依赖谁</h2>
+  <p class="sec-sub">把知识图谱的 JSON 关系画出来：箭头方向 = 指向被依赖的概念。点击任意节点同样可以查看卡片。</p>
+  <div class="panel">
+    <svg viewBox="0 0 940 500" role="img" aria-label="概念关系图">
+      <defs>
+        <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4f8ef7"/></marker>
+        <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#34c98e"/></marker>
+        <marker id="arrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+        <marker id="arrP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a78bfa"/></marker>
+      </defs>
+
+      <!-- edges -->
+      <path d="M 200,198 Q 250,130 394,114" fill="none" stroke="#4f8ef7" stroke-width="1.5" marker-end="url(#arrB)"/>
+      <text x="258" y="140" class="edge-l halo" fill="#7faaf7">is-a</text>
+
+      <path d="M 655,198 Q 605,130 506,114" fill="none" stroke="#4f8ef7" stroke-width="1.5" marker-end="url(#arrB)"/>
+      <text x="612" y="140" class="edge-l halo" fill="#7faaf7">is-a</text>
+
+      <path d="M 450,198 V 118" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrP)"/>
+      <text x="460" y="158" class="edge-l halo" fill="#bda6fb">选出</text>
+
+      <path d="M 320,338 Q 312,205 398,118" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.75" marker-end="url(#arrP)"/>
+      <text x="322" y="222" class="edge-l halo" fill="#bda6fb">编号</text>
+
+      <path d="M 105,338 L 166,248" fill="none" stroke="#34c98e" stroke-width="1.5" marker-end="url(#arrG)"/>
+      <text x="96" y="298" class="edge-l halo" fill="#5fd6a8">实现</text>
+
+      <path d="M 155,362 L 231,362" fill="none" stroke="#34c98e" stroke-width="1.5" marker-end="url(#arrG)"/>
+      <text x="178" y="352" class="edge-l halo" fill="#5fd6a8">产出</text>
+
+      <path d="M 725,366 L 631,366" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrO)"/>
+      <text x="664" y="356" class="edge-l halo" fill="#f0b95e">兜底</text>
+
+      <path d="M 585,338 Q 640,292 668,248" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrO)"/>
+      <text x="628" y="292" class="edge-l halo" fill="#f0b95e">需要</text>
+
+      <!-- nodes -->
+      <g class="rnode" onclick="showCard('token',this)">
+        <rect x="390" y="68" width="120" height="44" rx="10" class="nd" stroke="#f5b544" stroke-width="2"/>
+        <text x="450" y="86" class="n-main">Token</text>
+        <text x="450" y="103" class="n-sub">计算的最小单位</text>
+      </g>
+      <g class="rnode" onclick="showCard('subword',this)">
+        <rect x="125" y="198" width="130" height="44" rx="10" class="nd n-enc"/>
+        <text x="190" y="216" class="n-main" font-size="13.5">子词切分</text>
+        <text x="190" y="233" class="n-sub">Subword</text>
+      </g>
+      <g class="rnode" onclick="showCard('special',this)">
+        <rect x="635" y="198" width="130" height="44" rx="10" class="nd n-enc"/>
+        <text x="700" y="216" class="n-main" font-size="13.5">特殊 Token</text>
+        <text x="700" y="233" class="n-sub">BOS / EOS / PAD</text>
+      </g>
+      <g class="rnode" onclick="showCard('strategy',this)">
+        <rect x="385" y="198" width="130" height="44" rx="10" class="nd n-loop"/>
+        <text x="450" y="216" class="n-main" font-size="13.5">解码策略</text>
+        <text x="450" y="233" class="n-sub">T / k / p / 贪心</text>
+      </g>
+      <g class="rnode" onclick="showCard('bpe',this)">
+        <rect x="25" y="338" width="130" height="44" rx="10" class="nd" stroke="#34c98e" stroke-width="1.6"/>
+        <text x="90" y="356" class="n-main" font-size="13.5">BPE</text>
+        <text x="90" y="373" class="n-sub">高频对合并</text>
+      </g>
+      <g class="rnode" onclick="showCard('token-id',this)">
+        <rect x="235" y="338" width="130" height="44" rx="10" class="nd" stroke="#34c98e" stroke-width="1.6"/>
+        <text x="300" y="356" class="n-main" font-size="13.5">词表</text>
+        <text x="300" y="373" class="n-sub">Vocabulary</text>
+      </g>
+      <g class="rnode" onclick="showCard('encoding',this)">
+        <rect x="495" y="338" width="130" height="44" rx="10" class="nd" stroke="#f59e0b" stroke-width="1.6"/>
+        <text x="560" y="356" class="n-main" font-size="13.5">文本编码</text>
+        <text x="560" y="373" class="n-sub">Encoding</text>
+      </g>
+      <g class="rnode" onclick="showCard('bytefall',this)">
+        <rect x="725" y="338" width="130" height="44" rx="10" class="nd" stroke="#f59e0b" stroke-width="1.6"/>
+        <text x="790" y="356" class="n-main" font-size="13.5">字节回退</text>
+        <text x="790" y="373" class="n-sub">Byte Fallback</text>
+      </g>
+
+      <!-- legend -->
+      <line x1="40" y1="458" x2="72" y2="458" stroke="#4f8ef7" stroke-width="2"/>
+      <text x="78" y="462" class="legend-t">is-a 属于</text>
+      <line x1="170" y1="458" x2="202" y2="458" stroke="#34c98e" stroke-width="2"/>
+      <text x="208" y="462" class="legend-t">实现 / 产出</text>
+      <line x1="315" y1="458" x2="347" y2="458" stroke="#f59e0b" stroke-width="2"/>
+      <text x="353" y="462" class="legend-t">需要 / 兜底</text>
+      <line x1="460" y1="458" x2="492" y2="458" stroke="#a78bfa" stroke-width="2"/>
+      <text x="498" y="462" class="legend-t">选出 / 编号</text>
+      <text x="900" y="462" text-anchor="end" class="legend-t">🖱 点击节点查看概念卡片</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ ④ 表格 ============ -->
+<section id="tables">
+  <h2><span class="step">④</span>对比与误区：表格速查</h2>
+  <p class="sec-sub">适合对比的信息用表格，不适合再用一段文字复述。</p>
+  <div class="tbl-grid">
+    <div class="panel">
+      <div class="tbl-title"><span class="dot" style="background:var(--c2)"></span>四大切分算法的取舍</div>
+      <table>
+        <thead><tr><th>维度</th><th>BPE</th><th>WordPiece</th><th>Unigram LM</th><th>字符/字节级</th></tr></thead>
+        <tbody>
+          <tr><td>合并依据</td><td>相邻对<b>频率</b></td><td>合并后<b>似然提升</b></td><td>从大词表<b>逐步裁剪</b></td><td>无</td></tr>
+          <tr><td>代表模型</td><td>GPT 系列、Llama</td><td>BERT</td><td>T5（SentencePiece）</td><td>极少独立使用</td></tr>
+          <tr><td>预分词</td><td>GPT 系需要</td><td>需要</td><td>可不需要</td><td>不需要</td></tr>
+          <tr><td>处理生词</td><td class="right">✅ 字节回退</td><td class="wrong">⚠️ 子词 / UNK</td><td class="right">✅</td><td class="right">✅ 永远能编</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="tbl-title"><span class="dot" style="background:var(--c6)"></span>常见误区 vs 事实</div>
+      <table>
+        <tbody>
+          <tr><td class="wrong">"Token 就是单词"</td><td class="right">子词更常见，tokenization 常被切两半</td></tr>
+          <tr><td class="wrong">"词表越大越好"</td><td class="right">Embedding 与计算更贵，尾部 Token 学不好</td></tr>
+          <tr><td class="wrong">"中文 1 字 = 1 Token"</td><td class="right">通常 1 字 ≈ 0.6~1.5 Token，视 tokenizer 而定</td></tr>
+          <tr><td class="wrong">"字符数 ≈ Token 数"</td><td class="right">英文经验值 ≈ 4 字符 / Token</td></tr>
+          <tr><td class="wrong">"调 Temperature 增加知识"</td><td class="right">只改采样倾向，知识量不变</td></tr>
+          <tr><td class="wrong">"Token 概率 = 事实概率"</td><td class="right">语言概率 ≠ 事实正确性</td></tr>
+          <tr><td class="wrong">"流式 = 提前算完"</td><td class="right">仍然一次一个 Token 地生成</td></tr>
+          <tr><td class="wrong">"各模型 tokenizer 一样"</td><td class="right">词表 / 算法 / 特殊 Token 都不同，计费各按各的</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ⑤ 学习路径 ============ -->
+<section id="path">
+  <h2><span class="step">⑤</span>学习路径与自测</h2>
+  <p class="sec-sub">按依赖关系排序的八步路径；读完用四个问题验证理解。</p>
+  <div class="steps">
+    <div class="stepcard"><b>Token 的定义</b><span>计算单位 ≠ 语义单位</span></div>
+    <div class="stepcard"><b>Token 化 vs 生成</b><span>切分 ≠ 预测</span></div>
+    <div class="stepcard"><b>ID · 向量 · 位置</b><span>模型的真正输入</span></div>
+    <div class="stepcard"><b>Transformer</b><span>上下文怎么算</span></div>
+    <div class="stepcard"><b>Logits · Softmax</b><span>分数怎么变概率</span></div>
+    <div class="stepcard"><b>T · Top-k · Top-p</b><span>怎么选一个</span></div>
+    <div class="stepcard"><b>逐 Token 循环</b><span>追加 → 再预测 → 停止</span></div>
+    <div class="stepcard"><b>限制与风险</b><span>窗口 · 随机性 · 事实</span></div>
+  </div>
+
+  <div class="quiz">
+    <details><summary>1. 为什么大模型不直接按完整单词切分？</summary>
+      <div class="ans">完整单词的词表会爆炸（数百万），且无法处理新词、拼写变化和多语言；字符级则序列太长、计算代价高。子词在<b>词表规模</b>与<b>序列长度</b>之间取得折中。</div>
+    </details>
+    <details><summary>2. 词表里没有 "unhappiness"，为什么还能表示？</summary>
+      <div class="ans">会被切成 <code>["un", "happiness"]</code> 或更小的片段——子词的意义就在于：用已有积木<b>组合</b>出新词。</div>
+    </details>
+    <details><summary>3. "训练 BPE" 和 "编码时的 BPE" 区别是什么？</summary>
+      <div class="ans">训练（离线、一次）：统计语料高频相邻对，产出<b>合并规则 + 词表</b>；编码（在线、每条文本）：按已定规则<b>贪心匹配</b>切分。前者产出规则，后者使用规则。</div>
+    </details>
+    <details><summary>4. 推理时 PAD 为什么要被 mask？</summary>
+      <div class="ans">PAD 只是为了对齐批次长度，不携带任何语义；不 mask 会污染注意力，让无关位置参与概率计算。</div>
+    </details>
+  </div>
+
+  <blockquote class="final">
+    <b>压缩后的完整结论</b>：模型把语言转换成离散 Token 序列，在每一步根据已有上下文预测下一个 Token；最终的句子、段落和答案，都是大量局部预测连续累积的结果——这也解释了为什么模型可能概念正确，但表达上出现重复或跳跃。
+  </blockquote>
+</section>
+
+<!-- ============ ⑥ 概念树引擎 ============ -->
+<section id="engine">
+  <h2><span class="step">⑥</span>概念树引擎：数据结构 × 递归遍历 × 关系语义</h2>
+  <p class="sec-sub">把上面的知识地图升级成可执行的 Concept Tree：LLM 解释节点 → 提取子概念 → 非原语继续入队 → 物理/数学原语终止，最终落盘成一棵树。</p>
+  <div class="engine-grid">
+    <div class="panel schema-panel">
+      <h3>🧩 数据结构设计</h3>
+      <p class="schema-sub">每个节点都是一个自描述的知识单元，关系显式建模，不靠隐式“理解”。</p>
+      <pre class="schema-code">interface ConceptNode {
+  id: string
+  name: string
+  summary: string
+  explanation: string[]
+  is_primitive: boolean
+  primitive_kind: "physical" | "math" | null
+  set_relations: SetRelation[]
+  temporal_relations: TemporalRelation[]
+  spatial_relations: SpatialRelation[]
+  children: ConceptNode[]
+}</pre>
+      <div class="primitive-rule">
+        <b>递归终止条件</b><br>
+        当前节点的所有子概念都能被：
+        <ul>
+          <li><b>物理实体</b>描述，或</li>
+          <li><b>数学简单抽象</b>描述：集合、函数、矩阵、向量、公式</li>
+        </ul>
+        则这些子节点标记为 <code>is_primitive=true</code>，不再展开。
+      </div>
+    </div>
+    <div class="panel traversal-panel">
+      <div class="engine-head">
+        <h3>🔁 递归 / 队列遍历</h3>
+        <div class="engine-controls">
+          <button id="engineDfsBtn" class="ebtn">深度优先</button>
+          <button id="engineBfsBtn" class="ebtn active">队列遍历</button>
+          <button id="engineNextBtn" class="ebtn primary">下一步</button>
+          <button id="engineResetBtn" class="ebtn">重置</button>
+          <button id="engineJsonBtn" class="ebtn">导出 JSON</button>
+        </div>
+      </div>
+      <div class="tree-stage">
+        <svg id="engineTreeSvg" viewBox="0 0 1160 420" role="img" aria-label="概念树递归遍历图"></svg>
+      </div>
+      <div class="engine-state-grid">
+        <div class="state-card">
+          <div class="state-title">当前节点</div>
+          <div id="engineCurrent" class="state-value">—</div>
+          <div id="engineCurrentMeta" class="state-meta">等待开始</div>
+        </div>
+        <div class="state-card">
+          <div class="state-title" id="engineQueueTitle">待遍历队列</div>
+          <div id="engineQueue" class="queue-list"></div>
+        </div>
+        <div class="state-card">
+          <div class="state-title">遍历状态</div>
+          <div class="state-metrics"><span id="engineVisited">0</span> 已访问 <span class="sep">/</span> <span id="engineTotal">0</span> 总节点</div>
+          <div id="engineTermination" class="termination">未开始</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="relation-strip">
+    <div class="relation-card rc-set"><b>集合论关系</b><span>subset / element / intersect / disjoint / union / complement</span><small>用大图形包含、相交、相离表达，不再画普通关系边。</small></div>
+    <div class="relation-card rc-time"><b>时序关系</b><span>单向橙色虚线箭头</span><small>只表示先后方向，不加文字标签。</small></div>
+    <div class="relation-card rc-space"><b>空间关系</b><span>located_in / occurs_in</span><small>用容器嵌套表达层级位置。</small></div>
+    <div class="relation-card rc-terminal"><b>原语终止</b><span>physical / math</span><small>物理实体或数学抽象到达叶节点。</small></div>
+  </div>
+</section>
+
+  <footer>知识来源：Agent A（知识地图 · 流水线 / 学习路径 / 误区）＋ Agent B（知识包 · 卡片 / 关系图谱 / 算法对比） · 本页为图形化整合层</footer>
+</div>
+
+<script>
+const CLUSTERS = [
+  {id:'c1', c:'var(--c1)', name:'Token 是什么', desc:'计算单位，不是语义单位', chips:[
+    ['token','Token 词元'], ['token-id','Token ID 与词表'], ['special','特殊 Token']]},
+  {id:'c2', c:'var(--c2)', name:'Token 如何产生', desc:'编码：文本 → ID', chips:[
+    ['subword','子词切分'], ['bpe','BPE 词表构建'], ['encoding','文本编码流程'], ['bytefall','字节回退']]},
+  {id:'c3', c:'var(--c3)', name:'模型如何预测', desc:'上下文 → 概率分布', chips:[
+    ['embedding','Embedding 与位置'], ['transformer','Transformer 注意力'], ['logits','Logits'], ['softmax','Softmax 概率']]},
+  {id:'c4', c:'var(--c4)', name:'模型如何选择', desc:'概率 → 一个 Token', chips:[
+    ['strategy','解码策略'], ['greedy','贪心解码'], ['temperature','Temperature'], ['topk','Top-k'], ['topp','Top-p'], ['loop','自回归循环'], ['stop','停止条件']]},
+  {id:'c5', c:'var(--c5)', name:'Token 如何变回文本', desc:'ID → 文本', chips:[
+    ['decode','ID 解码与拼接'], ['streaming','流式输出']]},
+  {id:'c6', c:'var(--c6)', name:'影响与限制', desc:'工程约束与风险', chips:[
+    ['window','上下文窗口'], ['cost','成本与 Token 效率'], ['path','路径依赖'], ['random','采样随机性'], ['probfact','概率 ≠ 事实']]},
+];
+
+const CARDS = {
+  'token':      {cl:0, en:'Token', def:'模型处理文本的最小单位：可能是词、子词、字符或字节片段。', int:'一串乐高积木——切得越细，能拼的组合越多，但块数也越多。', ex:'<code>"I love NLP"</code> → <code>["I", " love", " NLP"]</code>（3 个）；<code>"tokenization"</code> → <code>["token","ization"]</code>', edge:'Token ≠ 单词 ≠ 字符：它是模型的计算单位，不是自然语言的语义单位。'},
+  'token-id':   {cl:0, en:'Token ID / Vocabulary', def:'每个 Token 在词表中对应一个整数 ID，模型实际接收的是 ID 序列。', int:'一本官方词典＋编号：模型按编号存取，并不理解文字本身。', ex:'<code>["我","喜欢","学习"]</code> → <code>[314, 9281, 672]</code>；cl100k_base 词表 ≈ 10 万。', edge:'ID 只是索引、没有数值含义；词表大小训练前定死，不同模型互不兼容。'},
+  'special':    {cl:0, en:'Special Tokens', def:'不表示文本、只携带结构信息的保留 Token：BOS / EOS / PAD / UNK 等。', int:'像文章的句号和段落标记：告诉模型哪里开始、哪里结束、哪里填空。', ex:'Llama 用 <code>&lt;s&gt; / &lt;/s&gt;</code>；BERT 用 <code>[CLS] / [SEP]</code>；还有系统消息、工具调用标记。', edge:'ID 是预留的，编码普通文本绝不能撞上；各模型定义不同。'},
+  'subword':    {cl:1, en:'Subword Segmentation', def:'把词拆成"比词小、比字符大"的片段，在词表规模与序列长度之间折中。', int:'<code>"unhappiness"</code> → <code>["un","happiness"]</code>：没见过的新词也能用旧积木拼出来。', ex:'<code>"tokenization"</code> → <code>["token", "ization"]</code>', edge:'整词级（词表爆炸、无法处理新词）与字符级（序列超长）是两个极端，子词是折中。'},
+  'bpe':        {cl:1, en:'Byte Pair Encoding', def:'反复合并语料中最高频的相邻符号对，逐步构建固定大小的子词词表。', int:'自动把常用搭配打包：<code>l+e</code> 常一起出现 → 合并成 <code>le</code>，一路合并到 <code>learning</code>。', ex:'字符起步 → l+e→le → le+arn→learn → learn+ing→learning，直到达到目标词表（如 32k / 100k）。', edge:'贪心算法：合并顺序一旦定下就固定，编码时按此顺序贪心匹配。'},
+  'encoding':   {cl:1, en:'Encoding', def:'文本 → Token ID：预分词 → 子词/字节切分 → 匹配词表 → 追加特殊 Token。', int:'查词典写编号：先切段、再查表、最后贴上起止标记。', ex:'<code>"请解释索引为什么能加快查询"</code> → <code>[ID₁, ID₂, ID₃, …]</code>', edge:'同一文本可能有多种切法；不同 tokenizer 对同一文本的 Token 数不同（计费以此为准确依据）。'},
+  'bytefall':   {cl:1, en:'Byte-level Fallback', def:'词表中查不到的字符，退化为 UTF-8 字节级 Token 表示。', int:'兜底方案：拼不出来的字，拆成字节也要拼。', ex:'生僻字、emoji 通常走字节回退。', edge:'保证任意文本都能编码，但一个字符可能膨胀成多个 Token——费用与序列变长。'},
+  'embedding':  {cl:2, en:'Embedding + Position', def:'每个 Token ID 转成向量并叠加位置信息，这才是 Transformer 的真正输入。', int:'Token 表示 = 内容向量 ＋ 位置信息。', ex:'没有位置信息，模型无法区分 <code>"A 影响 B"</code> 和 <code>"B 影响 A"</code>。', edge:'模型从不直接处理字符串——向量才是它的"语言"。'},
+  'transformer':{cl:2, en:'Self-Attention', def:'注意力机制让当前位置参考上下文中所有已出现的 Token。', int:'生成第 n 个 Token 时，可以看 Token 1…n−1，但看不到未来。', ex:'看到 <code>"数据库索引可以"</code> 之后，模型对 <code>"加快"</code> 的关注度会升高。', edge:'只看过去不看未来——因果语言模型的基本约束。'},
+  'logits':     {cl:2, en:'Logits', def:'多层计算后，为词表中每个 Token 各算一个未归一化的偏好分数。', int:'给每个候选打的"原始评分"，还不是概率。', ex:'<code>logits = [−1.2, 3.7, 0.8, …]</code>（每个数对应一个候选 Token）', edge:'分数只有在 Softmax 归一化之后才能相互比较。'},
+  'softmax':    {cl:2, en:'Softmax', def:'把 Logits 归一化为总和为 1 的概率分布 P(下一个 Token | 上下文)。', int:'把评分换算成"抽签的权重"。', ex:'加快 0.42｜提高 0.25｜减少 0.13｜查询 0.06｜其他 0.14', edge:'这是"语言概率"，不是"事实概率"——模型优化的是预测下一个词。'},
+  'strategy':   {cl:3, en:'Decoding Strategy', def:'从概率分布中选出下一个 Token 的规则：贪心、Temperature、Top-k、Top-p 通常组合使用。', int:'先调温、再筛候选、最后抽签或选第一名。', ex:'Logits → Temperature → Top-p → 采样 → 下一个 Token。', edge:'策略只改变"怎么选"，不改变模型知道什么。'},
+  'greedy':     {cl:3, en:'Greedy / argmax', def:'永远选概率最高的那个 Token。', int:'每步都选第一名。', ex:'P(加快)=0.42 最高 → 选 <code>"加快"</code>。', edge:'稳定可复现，但容易重复、表达僵硬；局部最优不等于全局好句。'},
+  'temperature':{cl:3, en:'Temperature', def:'调整概率分布的平滑度：低温让高概率更突出，高温给低概率更多机会。', int:'低温保守、高温发散。', ex:'T→0 逼近贪心；T 升高后 0.13 的"减少"也可能被抽中。', edge:'只改变选择倾向，不会让模型多知道任何知识。'},
+  'topk':       {cl:3, en:'Top-k', def:'只保留概率最高的 k 个候选，其余清零，再从中采样。', int:'先筛出前 k 名再抽签。', ex:'k=2 → 只在"加快""提高"里选。', edge:'k 是固定的，不能适应分布不确定性的变化。'},
+  'topp':       {cl:3, en:'Nucleus Sampling', def:'按概率从高到低累加，保留累计概率达到 p 的最小集合，再从中采样。', int:'候选分明时少留几个，候选接近时多留几个。', ex:'p=0.9：可能只剩 2 个候选，也可能保留 20 个。', edge:'比固定 k 更能适应不同的不确定性水平。'},
+  'loop':       {cl:3, en:'Autoregressive Loop', def:'预测下一个 Token → 追加回上下文 → 再预测，直到命中停止条件。', int:'边计算边延展：不是先想好整篇再输出。', ex:'<code>"数据库索引可以"</code> → 加快 → <code>"…可以加快"</code> → 查询 → <code>"…查询"</code> → 速度', edge:'早期选错会改变后续所有概率——路径依赖的来源。'},
+  'stop':       {cl:3, en:'Stopping Criteria', def:'生成在以下情况终止：EOS/停止 Token、最大长度、停止字符串、外部中断。', int:'到站下车的四种方式。', ex:'输出 <code>&lt;/s&gt;</code> 或达到 max_tokens 即停。', edge:'流式显示只是输出方式，不代表模型提前算完了全篇。'},
+  'decode':     {cl:4, en:'Decoding', def:'Token ID → 字符串/字节片段 → 直接拼接还原文本（字节级再按 UTF-8 还原）。', int:'按编号取回积木直接拼起来，不需要"逆合并"。', ex:'<code>[ID₃₁₄, ID₉₂₈₁, ID₆₇₂]</code> → <code>"我喜欢学习"</code>', edge:'解码必须无损还原原文——这是硬要求。'},
+  'streaming':  {cl:4, en:'Streaming', def:'每生成一小段 Token 就立即发给用户，而不是等全部完成。', int:'边写边寄，不是写完再寄。', ex:'打字机效果：答案逐段出现。', edge:'只是显示方式的变化；模型仍然是一次一个 Token 地算。'},
+  'window':     {cl:5, en:'Context Window', def:'输入 Token ＋ 输出 Token ≤ 窗口大小，超出即被截断或报错。', int:'工作台面积有限：摆满了就放不下新东西。', ex:'128k 窗口 ≈ 一本小书，但要同时容纳问题和回答。', edge:'上下文越长成本越高，关键信息也可能被稀释。'},
+  'cost':       {cl:5, en:'Cost & Efficiency', def:'同样文本在不同 tokenizer 下 Token 数不同，直接影响费用、速度和可容纳内容。', int:'按积木块数计费，切得越碎越贵。', ex:'英文 ≈ 4 字符/Token；中文 1 字 ≈ 0.6~1.5 Token。', edge:'计费与上下文长度都必须以具体模型的 tokenizer 为准。'},
+  'path':       {cl:5, en:'Path Dependency', def:'前面选出的 Token 会成为后续上下文的一部分，改变后续概率。', int:'第一步走哪条路，后面全程都会跟着变。', ex:'早期一个不太好的 Token，可能让整段话越走越偏。', edge:'偏差会逐步放大——模型"越写越错"的机制性来源之一。'},
+  'random':     {cl:5, en:'Sampling Randomness', def:'多个候选概率接近时，采样可能产生不同结果。', int:'同一道题抽签，每次可能抽中不同答案。', ex:'同一问题问两遍措辞不同，不代表模型知识变了。', edge:'随机性来自解码路径，不一定表示模型知识变化。'},
+  'probfact':   {cl:5, en:'Probability ≠ Truth', def:'"这个 Token 在上下文中更可能出现" ≠ "它表达的事实更可能为真"。', int:'说得顺 ≠ 说得对。', ex:'流畅但错误的答案，语言概率依然很高。', edge:'模型优化的是语言预测，不是事实验证——所以需要检索与校验环节。'},
+};
+
+const grid = document.getElementById('clusterGrid');
+const panel = document.getElementById('cardPanel');
+
+CLUSTERS.forEach((cl, ci) => {
+  const div = document.createElement('div');
+  div.className = 'cluster';
+  div.style.setProperty('--c', cl.c);
+  div.innerHTML = `<h3><span class="dot"></span>${cl.name}</h3><div class="cd">${cl.desc}</div>`;
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+  cl.chips.forEach(([id, label]) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = label; b.dataset.id = id;
+    b.onclick = () => showCard(id, b);
+    chips.appendChild(b);
+  });
+  div.appendChild(chips);
+  grid.appendChild(div);
+});
+
+function showCard(id, el){
+  const c = CARDS[id]; if(!c) return;
+  const cl = CLUSTERS[c.cl];
+  panel.style.setProperty('--c', cl.c);
+  document.getElementById('cpTag').textContent = cl.name;
+  document.getElementById('cpName').textContent =
+    (cl.chips.find(x => x[0]===id) || [,''])[1];
+  document.getElementById('cpEn').textContent = c.en;
+  document.getElementById('cpDef').textContent = c.def;
+  document.getElementById('cpInt').innerHTML = c.int;
+  document.getElementById('cpEx').innerHTML = c.ex;
+  document.getElementById('cpEdge').textContent = c.edge;
+  panel.classList.add('open');
+  document.querySelectorAll('.chip.active, .rnode.active').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(n => n.classList.add('active'));
+  if(el && el.classList.contains('rnode')) el.classList.add('active');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function closeCard(){
+  panel.classList.remove('open');
+  document.querySelectorAll('.chip.active, .rnode.active').forEach(n => n.classList.remove('active'));
+}
+</script>
+<script>
+(function(){
+  "use strict";
+
+  const ENGINE_TREE = {
+    id: "token-generation-root",
+    name: "Token 生成机制",
+    summary: "从文本到 Token ID，再逐步预测下一个 Token，直到停止条件。",
+    explanation: [
+      "把文本编码为 Token 序列。",
+      "模型根据上下文计算下一个 Token 的概率分布。",
+      "解码策略选出一个 Token，并追加回上下文循环生成。"
+    ],
+    is_primitive: false,
+    primitive_kind: null,
+    set_relations: [
+      {subject:"Token ID", relation:"element_of", object:"词表", note:"ID 是词表集合中的元素"},
+      {subject:"Top-k 候选", relation:"subset_of", object:"全部候选", note:"Top-k 是候选集合的子集"},
+      {subject:"Embedding", relation:"element_of", object:"实向量空间", note:"向量是实向量空间的元素"}
+    ],
+    temporal_relations: [
+      {before:"文本编码", after:"上下文建模", kind:"before", note:"先编码再建模"},
+      {before:"上下文建模", after:"概率化与解码", kind:"before", note:"先得到分布再选 Token"},
+      {before:"概率化与解码", after:"自回归循环", kind:"before", note:"选出后进入下一轮"}
+    ],
+    spatial_relations: [
+      {subject:"Embedding 向量", relation:"located_in", object:"Transformer 输入层", note:"向量作为输入表示"},
+      {subject:"Logits 向量", relation:"located_in", object:"输出投影层", note:"输出层产生候选分数"}
+    ],
+    children: [
+      {
+        id:"encoding-stage", name:"文本编码", summary:"文本 → Token ID",
+        is_primitive:false, primitive_kind:null,
+        children:[
+          {id:"char-seq", name:"字符序列", summary:"Unicode/字节序列", is_primitive:true, primitive_kind:"math"},
+          {id:"merge-rules", name:"合并规则", summary:"BPE 有序规则集合", is_primitive:true, primitive_kind:"math"},
+          {id:"vocabulary", name:"词表", summary:"Token → ID 的映射集合", is_primitive:true, primitive_kind:"math"}
+        ]
+      },
+      {
+        id:"context-stage", name:"上下文建模", summary:"ID 序列 → 语义向量表示",
+        is_primitive:false, primitive_kind:null,
+        children:[
+          {id:"embedding", name:"Embedding 向量", summary:"实数向量", is_primitive:true, primitive_kind:"math"},
+          {id:"position", name:"位置编码", summary:"位置向量函数", is_primitive:true, primitive_kind:"math"},
+          {id:"attention", name:"注意力矩阵", summary:"注意力权重矩阵", is_primitive:true, primitive_kind:"math"},
+          {id:"logits", name:"Logits 向量", summary:"候选分数向量", is_primitive:true, primitive_kind:"math"}
+        ]
+      },
+      {
+        id:"decode-stage", name:"概率化与解码", summary:"分数 → 概率 → 一个 Token",
+        is_primitive:false, primitive_kind:null,
+        children:[
+          {id:"softmax", name:"Softmax 函数", summary:"归一化函数", is_primitive:true, primitive_kind:"math"},
+          {id:"temperature", name:"Temperature", summary:"温度缩放函数", is_primitive:true, primitive_kind:"math"},
+          {id:"topk", name:"Top-k 集合", summary:"前 k 候选子集", is_primitive:true, primitive_kind:"math"},
+          {id:"sampling", name:"采样函数", summary:"按概率抽样函数", is_primitive:true, primitive_kind:"math"}
+        ]
+      },
+      {
+        id:"loop-stage", name:"自回归循环", summary:"Token 追加回上下文并继续预测",
+        is_primitive:false, primitive_kind:null,
+        children:[
+          {id:"append", name:"上下文追加", summary:"序列拼接操作", is_primitive:true, primitive_kind:"math"},
+          {id:"stop", name:"停止条件", summary:"布尔终止谓词", is_primitive:true, primitive_kind:"math"}
+        ]
+      }
+    ]
+  };
+
+  const svg = document.getElementById("engineTreeSvg");
+  const currentEl = document.getElementById("engineCurrent");
+  const currentMetaEl = document.getElementById("engineCurrentMeta");
+  const queueEl = document.getElementById("engineQueue");
+  const queueTitle = document.getElementById("engineQueueTitle");
+  const visitedEl = document.getElementById("engineVisited");
+  const totalEl = document.getElementById("engineTotal");
+  const terminationEl = document.getElementById("engineTermination");
+  const dfsBtn = document.getElementById("engineDfsBtn");
+  const bfsBtn = document.getElementById("engineBfsBtn");
+  const nextBtn = document.getElementById("engineNextBtn");
+  const resetBtn = document.getElementById("engineResetBtn");
+  const jsonBtn = document.getElementById("engineJsonBtn");
+
+  let mode = "bfs";
+  let step = -1;
+  let order = [];
+  let visited = new Set();
+  let nodeIndex = new Map();
+  let layout = new Map();
+
+  function cloneTree(node, parent, depth){
+    const n = {
+      id:node.id, name:node.name, summary:node.summary || "",
+      is_primitive:!!node.is_primitive,
+      primitive_kind:node.primitive_kind || null,
+      parent:parent || null, depth:depth, children:[]
+    };
+    nodeIndex.set(n.id, n);
+    (node.children || []).forEach(c => n.children.push(cloneTree(c, n, depth+1)));
+    return n;
+  }
+  const tree = cloneTree(ENGINE_TREE, null, 0);
+
+  function bfsOrder(root){
+    const q=[root], out=[];
+    while(q.length){const n=q.shift(); out.push(n); n.children.forEach(c=>q.push(c));}
+    return out;
+  }
+  function dfsOrder(root){
+    const out=[];
+    function visit(n){out.push(n); n.children.forEach(visit);}
+    visit(root);
+    return out;
+  }
+  function rebuildOrder(){
+    order = mode==="dfs" ? dfsOrder(tree) : bfsOrder(tree);
+    totalEl.textContent = String(order.length);
+  }
+
+  function assignLayout(){
+    layout.clear();
+    layout.set(tree.id,{x:500,y:26,w:190,h:58});
+    const groupCenters=[145,425,705,985];
+    tree.children.forEach((g,gi)=>{
+      const cx=groupCenters[gi] || 145+gi*260;
+      layout.set(g.id,{x:cx-85,y:160,w:170,h:58});
+      const leaves=g.children;
+      const gap=105;
+      leaves.forEach((leaf,li)=>{
+        const lx=cx+(li-(leaves.length-1)/2)*gap;
+        layout.set(leaf.id,{x:lx-75,y:310,w:150,h:56});
+      });
+    });
+  }
+
+  function nodeClass(n){
+    const cls=["engine-node"];
+    cls.push(n.is_primitive ? "terminal" : "nonterminal");
+    if(visited.has(n.id)) cls.push("visited");
+    if(step>=0 && order[step] && order[step].id===n.id) cls.push("active");
+    return cls.join(" ");
+  }
+
+  function renderTree(){
+    const ns="http://www.w3.org/2000/svg";
+    svg.innerHTML="";
+    function drawEdge(a,b){
+      const ra=layout.get(a.id), rb=layout.get(b.id);
+      if(!ra||!rb) return;
+      const x1=ra.x+ra.w/2, y1=ra.y+ra.h;
+      const x2=rb.x+rb.w/2, y2=rb.y;
+      const path=document.createElementNS(ns,"path");
+      path.setAttribute("class","engine-edge");
+      path.setAttribute("d",`M ${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}`);
+      svg.appendChild(path);
+    }
+    function drawEdges(n){
+      n.children.forEach(c=>drawEdge(n,c));
+    }
+    function drawNodeBox(n){
+      drawEdges(n);
+      const r=layout.get(n.id); if(!r) return;
+      const g=document.createElementNS(ns,"g");
+      g.setAttribute("class",nodeClass(n));
+      g.dataset.id=n.id;
+      const rect=document.createElementNS(ns,"rect");
+      rect.setAttribute("x",String(r.x));
+      rect.setAttribute("y",String(r.y));
+      rect.setAttribute("width",String(r.w));
+      rect.setAttribute("height",String(r.h));
+      rect.setAttribute("rx","10");
+      const t=document.createElementNS(ns,"text");
+      t.setAttribute("x",String(r.x+r.w/2));
+      t.setAttribute("y",String(r.y+24));
+      t.textContent=n.name;
+      const s=document.createElementNS(ns,"text");
+      s.setAttribute("class","sub");
+      s.setAttribute("x",String(r.x+r.w/2));
+      s.setAttribute("y",String(r.y+42));
+      s.textContent=n.is_primitive ? (n.primitive_kind==="math"?"数学原语":"物理实体") : "继续展开";
+      g.appendChild(rect);
+      g.appendChild(t);
+      g.appendChild(s);
+      g.addEventListener("click",()=>jumpTo(n.id));
+      svg.appendChild(g);
+      n.children.forEach(drawNodeBox);
+    }
+    drawNodeBox(tree);
+  }
+
+  function queueSnapshot(){
+    if(mode==="bfs"){
+      const q=[tree.id];
+      for(let i=0;i<=step && i<order.length;i++){
+        const n=order[i];
+        const pos=q.indexOf(n.id);
+        if(pos>=0) q.splice(pos,1);
+        if(!n.is_primitive) n.children.forEach(c=>q.push(c.id));
+      }
+      return q;
+    }
+    const stack=[];
+    const target = step>=0 ? order[step] : null;
+    let p = target ? target.parent : null;
+    while(p){stack.unshift(p.id); p=p.parent;}
+    if(target) stack.push(target.id);
+    return stack;
+  }
+
+  function renderState(){
+    const n = step>=0 ? order[step] : null;
+    if(!n){
+      currentEl.textContent="—";
+      currentMetaEl.textContent="等待开始";
+      queueTitle.textContent = mode==="dfs" ? "递归栈" : "待遍历队列";
+      queueEl.innerHTML='<span class="queue-empty">空</span>';
+      visitedEl.textContent="0";
+      terminationEl.textContent="未开始";
+      return;
+    }
+    currentEl.textContent=n.name;
+    currentMetaEl.textContent = n.is_primitive
+      ? `原语节点 · ${n.primitive_kind==="math"?"数学抽象":"物理实体"} · 停止展开`
+      : `深度 ${n.depth} · 继续提取子概念`;
+    queueTitle.textContent = mode==="dfs" ? "递归栈" : "待遍历队列";
+    const q=queueSnapshot();
+    queueEl.innerHTML = q.length ? q.map(id=>{
+      const node=nodeIndex.get(id);
+      return `<span class="queue-item ${node && node.is_primitive ? "terminal":""}">${node ? node.name : id}</span>`;
+    }).join("") : '<span class="queue-empty">空</span>';
+    visitedEl.textContent=String(visited.size);
+    terminationEl.textContent = n.is_primitive
+      ? "✅ 终止：子概念已是物理/数学原语"
+      : "⏳ 继续：子概念仍需解释并入队";
+  }
+
+  function renderAll(){
+    rebuildOrder();
+    visited.clear();
+    for(let i=0;i<=step && i<order.length;i++) visited.add(order[i].id);
+    renderTree();
+    renderState();
+  }
+
+  function next(){
+    if(step < order.length-1) step++;
+    renderAll();
+  }
+  function reset(){
+    step=-1;
+    visited.clear();
+    renderAll();
+  }
+  function setMode(m){
+    mode=m;
+    dfsBtn.classList.toggle("active",m==="dfs");
+    bfsBtn.classList.toggle("active",m==="bfs");
+    reset();
+  }
+  function jumpTo(id){
+    const idx=order.findIndex(n=>n.id===id);
+    if(idx>=0){step=idx; renderAll();}
+  }
+  function exportJson(){
+    function clean(n){
+      return {
+        id:n.id,
+        name:n.name,
+        summary:n.summary,
+        is_primitive:n.is_primitive,
+        primitive_kind:n.primitive_kind,
+        children:n.children.map(clean)
+      };
+    }
+    const blob=new Blob([JSON.stringify(clean(tree),null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="token-concept-tree.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  dfsBtn.addEventListener("click",()=>setMode("dfs"));
+  bfsBtn.addEventListener("click",()=>setMode("bfs"));
+  nextBtn.addEventListener("click",next);
+  resetBtn.addEventListener("click",reset);
+  jsonBtn.addEventListener("click",exportJson);
+  document.addEventListener("keydown",e=>{
+    const tag=document.activeElement ? document.activeElement.tagName : "";
+    if(["INPUT","TEXTAREA"].includes(tag)) return;
+    if(e.key==="n"||e.key==="N") next();
+  });
+
+  assignLayout();
+  setMode("bfs");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>梯度下降 · 概念动画讲解</title>
+<style>
+  :root {
+    --bg: #000000;
+    --fg: #ffffff;
+    --grey-border: #555555;
+    --grey-fill: #1a1a1a;
+    --grey-text: #999999;
+    --current-fill: #ffffff;
+    --current-text: #000000;
+    --orange-fill: #ff8c00;
+    --orange-text: #000000;
+    --temporal-edge: #ff8c00;
+    --font: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    overflow: hidden;
+  }
+
+  #app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 20px;
+    border-bottom: 1px solid #222;
+    background: #000;
+    z-index: 5;
+  }
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .controls button {
+    background: #111;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .controls button:hover {
+    background: #222;
+    border-color: #fff;
+  }
+  .controls .progress-text {
+    min-width: 70px;
+    text-align: center;
+    color: #aaa;
+  }
+  #progress {
+    flex: 1;
+    height: 4px;
+    background: #222;
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 120px;
+  }
+  #progress > div {
+    height: 100%;
+    width: 0%;
+    background: var(--orange-fill);
+    transition: width .3s ease;
+  }
+
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Upper area: 75% */
+  .upper {
+    height: 75%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 20px 6px 20px;
+    min-height: 0;
+    border-bottom: 1px solid #222;
+  }
+
+  .ancestor-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #222;
+    overflow-x: hidden;
+    min-height: 48px;
+  }
+  .ancestor-row .label {
+    font-size: 12px;
+    color: #777;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+
+  .node-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--grey-border);
+    background: var(--grey-fill);
+    color: var(--grey-text);
+    font-size: 14px;
+    white-space: nowrap;
+    transition: all .3s ease;
+  }
+  .node-pill.current {
+    background: var(--current-fill);
+    color: var(--current-text);
+    border-color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 0 24px rgba(255,255,255,.35);
+    animation: pulse 2s infinite;
+  }
+  .node-pill.ancestor {
+    opacity: .9;
+  }
+  .node-pill.ancestor.group-start {
+    margin-left: auto;
+  }
+  .node-pill.entity {
+    border-style: solid;
+  }
+  .node-pill.abstract {
+    border-style: dashed;
+  }
+  .node-pill.clickable {
+    cursor: pointer;
+  }
+  .node-pill.clickable:hover {
+    border-color: #ddd;
+    color: #fff;
+  }
+  .node-pill.hidden {
+    display: none;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(255,255,255,.18); }
+    50% { box-shadow: 0 0 34px rgba(255,255,255,.45); }
+  }
+
+  .main-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .lecture {
+    flex: 0 0 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  .lecture h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.3;
+    border-left: 4px solid var(--orange-fill);
+    padding-left: 10px;
+  }
+  .lecture .summary {
+    color: #ccc;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .lecture .sentences {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .lecture .sentence {
+    border-left: 2px solid #333;
+    padding-left: 10px;
+    color: #eee;
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: slideIn .5s ease forwards;
+  }
+  .sentence:nth-child(1) { animation-delay: .05s; }
+  .sentence:nth-child(2) { animation-delay: .25s; }
+  .sentence:nth-child(3) { animation-delay: .45s; }
+  .sentence:nth-child(4) { animation-delay: .65s; }
+  @keyframes slideIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .contrast-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .contrast-box {
+    background: var(--orange-fill);
+    color: var(--orange-text);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .contrast-title {
+    color: #aaa;
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+
+  /* ---------- typed expression blocks ---------- */
+  .blocks { display: flex; flex-direction: column; gap: 10px; }
+  .block {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: slideIn .5s ease forwards;
+  }
+  .block.formula {
+    font-family: "Cambria Math", "STIX Two Math", Georgia, serif;
+    font-size: 19px;
+    text-align: center;
+    background: #0c0c0c;
+    border: 1px solid #333;
+  }
+  .block.formula .caption {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+  }
+  .block.analogy { background: #101418; border-left: 3px solid #4da3ff; color: #cfe3ff; }
+  .block.example { background: #141210; border-left: 3px solid #ffd24d; color: #ffeec2; }
+  .block.example .title { font-weight: 700; color: #ffd24d; margin-bottom: 4px; font-size: 13px; }
+  .block.quote { background: #0a0f0a; border-left: 3px solid #57d98a; color: #d2f5e0; font-style: italic; }
+  .block.quote .source { font-style: normal; font-size: 11px; color: #57d98a; margin-top: 6px; text-align: right; }
+  .block.callout { border: 1px dashed #ff8c00; color: #ffce85; background: #141005; }
+  .block.callout.tone-warn { border-color: #ff4d4d; color: #ffb3b3; background: #140505; }
+  .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+  .steps li {
+    display: flex; gap: 10px; align-items: flex-start;
+    opacity: 0; transform: translateX(-12px);
+    animation: slideIn .45s ease forwards;
+    background: #0d0d0d; border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    flex: 0 0 22px; height: 22px; border-radius: 50%;
+    background: var(--orange-fill); color: #000;
+    font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  table.block-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .block-table th { background: #1c1c1c; }
+  .block-table th, .block-table td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+  .block.chart-block { background: #0b0b0b; border: 1px solid #262626; }
+  .block.chart-block .chart-title { font-size: 12px; color: #bbb; margin-bottom: 6px; }
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .bar-rect { transform: scaleY(0); transform-origin: bottom; animation: growUp .8s ease forwards; }
+  @keyframes growUp { to { transform: scaleY(1); } }
+  .line-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.2s ease forwards; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .block.quiz { background: #0d0d14; border: 1px solid #3a3a5a; }
+  .block.quiz .q { color: #c9c9ff; }
+  .block.quiz button {
+    margin-top: 8px; background: #222244; color: #fff;
+    border: 1px solid #556; border-radius: 6px;
+    padding: 5px 10px; cursor: pointer; font-size: 12px;
+  }
+  .block.quiz .hint { font-size: 12px; color: #888; margin-top: 4px; }
+  .block.quiz .answer { display: none; margin-top: 8px; color: #9fd89f; border-top: 1px dashed #333; padding-top: 8px; }
+  .block.quiz.revealed .answer { display: block; animation: fadeIn .4s ease; }
+  .block.quiz.revealed button { display: none; }
+
+  .diagram-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #040404;
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #diagram {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  /* Lower area: 25% */
+  .lower {
+    height: 25%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 20px 12px 20px;
+    min-height: 0;
+    background: #020202;
+  }
+  .lower .lower-label {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 8px;
+  }
+  .children-row {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .child-box {
+    flex: 0 0 auto;
+    min-width: 100px;
+    max-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid var(--grey-border);
+    background: var(--grey-fill);
+    color: var(--grey-text);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .child-box.entity {
+    border-style: solid;
+  }
+  .child-box.abstract {
+    border-style: dashed;
+  }
+  .child-box:hover {
+    border-color: #ccc;
+    color: #fff;
+  }
+  .child-box .type-tag {
+    display: block;
+    font-size: 10px;
+    color: #777;
+    margin-top: 4px;
+  }
+  .empty {
+    color: #666;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  svg text {
+    font-family: var(--font);
+  }
+
+  .edge-label {
+    font-size: 11px;
+    fill: #fff;
+  }
+  .edge-label.temporal {
+    fill: var(--temporal-edge);
+  }
+  .external-node {
+    fill: #181818;
+    stroke: #777;
+    stroke-width: 1;
+  }
+
+  .fade-swap {
+    animation: fadeIn .45s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="root-title"></h1>
+    <div class="controls">
+      <button id="prevBtn" title="上一个节点">◀ 上一步</button>
+      <button id="playBtn" title="播放/暂停">▶ 播放</button>
+      <button id="nextBtn" title="下一个节点">下一步 ▶</button>
+      <span class="progress-text" id="progressText">0 / 0</span>
+      <div id="progress"><div id="progressBar"></div></div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="upper" id="upper">
+      <div class="ancestor-row" id="ancestorRow"></div>
+      <div class="main-content" id="mainContent">
+        <div class="lecture" id="lecture"></div>
+        <div class="diagram-wrap">
+          <svg id="diagram" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="lower" id="lower">
+      <div class="lower-label">子节点 · 仅作结构提示，灰色无额外说明</div>
+      <div class="children-row" id="childrenRow"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const TREE = {"id": "blocks-demo-root", "name": "梯度下降", "summary": "沿损失函数下降最快的方向逐步更新参数的优化算法。", "explanation": ["梯度下降是迭代优化算法：每一步沿着使损失减小最快的方向移动一小步。", "方向由损失函数对参数的梯度（导数）给出，步长由学习率控制。", "重复足够多步后，参数收敛到损失较小的位置。"], "is_primitive": false, "primitive_kind": null, "contrast": ["随机梯度下降", "牛顿法"], "blocks": [{"type": "formula", "text": "θ ← θ − η · ∇L(θ)", "caption": "参数更新公式：η 是学习率"}, {"type": "analogy", "text": "像蒙眼下山：脚能感觉哪边更陡（梯度），每次朝下坡方向迈一小步（学习率），直到走到谷底（极小值）。"}, {"type": "steps", "items": ["计算当前参数下的损失 L(θ)", "求梯度 ∇L(θ)", "沿负梯度方向更新 θ ← θ − η·∇L(θ)", "检查收敛，未收敛则回到第 1 步"]}, {"type": "chart", "chart": "line", "title": "典型损失曲线（随迭代下降）", "unit": "", "data": [{"label": "0", "value": 2.4}, {"label": "20", "value": 1.55}, {"label": "40", "value": 0.95}, {"label": "60", "value": 0.55}, {"label": "80", "value": 0.32}, {"label": "100", "value": 0.21}]}, {"type": "table", "columns": ["", "梯度下降 GD", "随机梯度下降 SGD"], "rows": [["每步用多少数据", "全部训练集", "单个/小批样本"], ["单步开销", "大", "小"], ["更新路径", "平滑", "抖动但能跳出小坑"]]}, {"type": "example", "title": "一维例子", "text": "若 L(θ) = (θ−3)²，则 ∇L = 2(θ−3)。从 θ=0、η=0.1 出发：0 → 0.6 → 1.08 → 1.46 … 逐步逼近 3。"}, {"type": "callout", "text": "学习率过大 → 来回震荡甚至发散；过小 → 收敛极慢。", "tone": "warn"}, {"type": "quote", "text": "梯度下降是迭代优化算法：每一步沿着使损失减小最快的方向移动一小步。", "source": "讲解示例文档"}, {"type": "quiz", "question": "为什么要沿『负』梯度方向更新参数？", "hint": "想想下山时朝哪个方向走", "answer": "梯度指向函数上升最快的方向；要减小损失，就要朝相反方向移动。"}], "set_relations": [{"subject": "梯度下降", "relation": "superset_of", "object": "学习率", "note": ""}, {"subject": "梯度下降", "relation": "superset_of", "object": "梯度", "note": ""}, {"subject": "梯度下降", "relation": "superset_of", "object": "损失函数", "note": ""}], "temporal_relations": [{"before": "求梯度", "after": "更新参数", "kind": "before", "note": ""}], "spatial_relations": [], "children": [{"id": "lr-leaf", "name": "学习率", "summary": "控制每步移动距离的正数。", "explanation": ["学习率是一个正的标量。"], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "grad-leaf", "name": "梯度", "summary": "多元函数偏导数组成的向量。", "explanation": ["梯度是各偏导数排成的向量。"], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [{"type": "formula", "text": "∇L = (∂L/∂θ₁, ∂L/∂θ₂, …)", "caption": "梯度向量"}], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "loss-node", "name": "损失函数", "summary": "度量预测与真实值差距的函数。", "explanation": ["损失函数把预测误差汇总成一个数。"], "is_primitive": false, "primitive_kind": null, "contrast": ["评估指标"], "blocks": [{"type": "formula", "text": "MSE = (1/n) Σ (yᵢ − ŷᵢ)²", "caption": "均方误差"}, {"type": "chart", "chart": "bar", "title": "不同损失的量级对比", "data": [{"label": "MSE", "value": 2.4}, {"label": "MAE", "value": 1.3}, {"label": "Huber", "value": 1.7}]}], "set_relations": [{"subject": "均方误差", "relation": "subset_of", "object": "损失函数", "note": ""}], "temporal_relations": [], "spatial_relations": [], "children": [{"id": "mse-leaf", "name": "均方误差", "summary": "误差平方的平均值。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "blocks": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
+
+const rootTitle = document.getElementById("root-title");
+const ancestorRow = document.getElementById("ancestorRow");
+const lecture = document.getElementById("lecture");
+const childrenRow = document.getElementById("childrenRow");
+const diagram = document.getElementById("diagram");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const playBtn = document.getElementById("playBtn");
+const progressText = document.getElementById("progressText");
+const progressBar = document.getElementById("progressBar");
+const upper = document.getElementById("upper");
+const lower = document.getElementById("lower");
+
+/* ---------- helpers ---------- */
+
+function getNodesInOrder(node) {
+  const out = [];
+  const stack = [{ n: node, depth: 0 }];
+  while (stack.length) {
+    const { n, depth } = stack.pop();
+    out.push({ id: n.id, depth });
+    for (let i = n.children.length - 1; i >= 0; i--) {
+      stack.push({ n: n.children[i], depth: depth + 1 });
+    }
+  }
+  return out;
+}
+
+const nodeById = new Map();
+const order = getNodesInOrder(TREE);
+order.forEach(item => {
+  const n = findById(TREE, item.id);
+  nodeById.set(item.id, n);
+});
+
+function findById(node, id) {
+  if (node.id === id) return node;
+  for (const child of node.children) {
+    const hit = findById(child, id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function getAncestors(root, nodeId) {
+  const path = [];
+  function visit(n, trail) {
+    if (n.id === nodeId) return trail;
+    for (const c of n.children) {
+      const hit = visit(c, trail.concat(n));
+      if (hit) return hit;
+    }
+    return null;
+  }
+  return visit(root, []) || [];
+}
+
+function makePill(text, className, node) {
+  const div = document.createElement("div");
+  const entity = node && node.is_primitive;
+  div.className = "node-pill " + className + (entity ? " entity" : " abstract") + " clickable";
+  div.textContent = text;
+  if (node) {
+    div.dataset.nodeId = node.id;
+    div.addEventListener("click", () => goToId(node.id));
+  }
+  return div;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = String(text ?? "");
+  return div.innerHTML;
+}
+
+/* ---------- typed expression blocks ---------- */
+
+function renderBlocksHTML(blocks) {
+  if (!blocks || !blocks.length) return "";
+  return '<div class="blocks">' + blocks.map((b, i) => renderBlock(b, i)).join("") + "</div>";
+}
+
+function blockOpen(b, i) {
+  const tone = b.tone === "warn" ? " tone-warn" : "";
+  const kind = b.type === "chart" ? "chart-block" : b.type;
+  return '<div class="block ' + kind + tone + '" style="animation-delay:' + (0.7 + i * 0.25) + 's">';
+}
+
+function renderBlock(b, i) {
+  if (!b || !b.type) return "";
+  switch (b.type) {
+    case "formula":
+      return blockOpen(b, i) + escapeHtml(b.text || "") +
+        (b.caption ? '<div class="caption">' + escapeHtml(b.caption) + "</div>" : "") + "</div>";
+    case "analogy":
+      return blockOpen(b, i) + '<div class="block-label">类比</div>' + escapeHtml(b.text || "") + "</div>";
+    case "example":
+      return blockOpen(b, i) + '<div class="block-label">例子</div>' +
+        (b.title ? '<div class="title">' + escapeHtml(b.title) + "</div>" : "") +
+        escapeHtml(b.text || "") + "</div>";
+    case "quote":
+      return blockOpen(b, i) + '<div class="block-label">原文引用</div>“' + escapeHtml(b.text || "") +
+        '”' + (b.source ? '<div class="source">—— ' + escapeHtml(b.source) + "</div>" : "") + "</div>";
+    case "callout":
+      return blockOpen(b, i) + '<div class="block-label">' + (b.tone === "warn" ? "注意" : "关键点") + "</div>" + escapeHtml(b.text || "") + "</div>";
+    case "steps":
+      return blockOpen(b, i) + '<div class="block-label">步骤</div><ol class="steps">' +
+        (b.items || []).map((s, j) =>
+          '<li style="animation-delay:' + (0.9 + j * 0.3) + 's"><span>' + escapeHtml(s) + "</span></li>"
+        ).join("") + "</ol></div>";
+    case "table": {
+      const cols = b.columns || [];
+      const head = cols.map(c => "<th>" + escapeHtml(c) + "</th>").join("");
+      const rows = (b.rows || []).map(r =>
+        "<tr>" + r.map(cell => "<td>" + escapeHtml(cell) + "</td>").join("") + "</tr>"
+      ).join("");
+      return blockOpen(b, i) + '<table class="block-table"><thead><tr>' + head +
+        "</tr></thead><tbody>" + rows + "</tbody></table></div>";
+    }
+    case "chart":
+      return blockOpen(b, i) + (b.title ? '<div class="chart-title">' + escapeHtml(b.title) + "</div>" : "") +
+        chartSVG(b) + "</div>";
+    case "quiz":
+      return blockOpen(b, i) + '<div class="block-label">自测</div><div class="q">' + escapeHtml(b.question || "") + "</div>" +
+        (b.hint ? '<div class="hint">提示：' + escapeHtml(b.hint) + "</div>" : "") +
+        '<button type="button">显示答案</button><div class="answer">' + escapeHtml(b.answer || "") + "</div></div>";
+    default:
+      return "";
+  }
+}
+
+function chartSVG(b) {
+  const data = (b.data || []).filter(d => typeof d.value === "number");
+  if (!data.length) return "";
+  const W = 400, H = 170, padL = 44, padB = 34, padT = 14;
+  const innerW = W - padL - 12, innerH = H - padT - padB;
+  const maxV = Math.max.apply(null, data.map(d => d.value).concat([0]));
+  const minV = Math.min.apply(null, data.map(d => d.value).concat([0]));
+  const span = (maxV - minV) || 1;
+  const y = v => padT + innerH * (1 - (v - minV) / span);
+  const labels = data.map(d => escapeHtml(String(d.label == null ? "" : d.label)));
+  let body = "";
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + innerH * (1 - g / 4);
+    const gv = minV + span * g / 4;
+    body += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - 12) + '" y2="' + gy + '" stroke="#222" stroke-width="1"/>';
+    body += '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" fill="#888" font-size="10" text-anchor="end">' + (Math.round(gv * 100) / 100) + "</text>";
+  }
+  if (b.chart === "line") {
+    const pts = data.map((d, i) => {
+      const x = padL + innerW * (data.length === 1 ? 0.5 : i / (data.length - 1));
+      return [x, y(d.value)];
+    });
+    body += '<polyline class="line-path" points="' + pts.map(p => p.join(",")).join(" ") + '" fill="none" stroke="#ff8c00" stroke-width="2.5"/>';
+    pts.forEach((p, i) => {
+      body += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="#ff8c00"><animate attributeName="r" from="0" to="4" begin="' + (0.6 + i * 0.25) + 's" dur="0.3s" fill="freeze"/></circle>';
+      body += '<text x="' + p[0] + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  } else {
+    const n = data.length;
+    const slot = innerW / n;
+    const bw = Math.min(54, slot * 0.6);
+    data.forEach((d, i) => {
+      const x = padL + slot * i + (slot - bw) / 2;
+      const y0 = y(Math.max(d.value, 0)), y1 = y(Math.min(d.value, 0));
+      const h = Math.max(2, Math.abs(y1 - y0));
+      const top = Math.min(y0, y1);
+      body += '<rect class="bar-rect" x="' + x + '" y="' + top + '" width="' + bw + '" height="' + h + '" fill="#ff8c00" style="animation-delay:' + (0.8 + i * 0.25) + 's"><title>' + labels[i] + ": " + d.value + "</title></rect>";
+      body += '<text x="' + (x + bw / 2) + '" y="' + (H - 10) + '" fill="#aaa" font-size="10" text-anchor="middle">' + labels[i] + "</text>";
+    });
+  }
+  return '<svg class="chart-svg" viewBox="0 0 ' + W + " " + H + '" role="img">' + body + "</svg>";
+}
+
+// quiz reveal (delegated, works for every rendered node)
+lecture.addEventListener("click", ev => {
+  const btn = ev.target.closest(".block.quiz button");
+  if (!btn) return;
+  btn.closest(".block.quiz").classList.add("revealed");
+});
+
+/* ---------- state ---------- */
+
+let currentIndex = 0;
+let playing = false;
+let playTimer = null;
+
+function currentNode() {
+  return nodeById.get(order[currentIndex].id);
+}
+
+function renderCurrent() {
+  const node = currentNode();
+  if (!node) return;
+
+  // Root title
+  rootTitle.textContent = TREE.name + " · 概念动画讲解";
+
+  // Upper: current + ancestors (nearest parent first, root/grandparent at far right)
+  ancestorRow.innerHTML = "";
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = "当前讲解:";
+  ancestorRow.appendChild(label);
+
+  const ancestors = getAncestors(TREE, node.id);
+  ancestorRow.appendChild(makePill(node.name, "current", node));
+
+  if (ancestors.length) {
+    const sep = document.createElement("span");
+    sep.textContent = "←";
+    sep.style.color = "#555";
+    ancestorRow.appendChild(sep);
+    // Display ancestors from nearest parent to root. The root (for deeper nodes:
+    // the parent-of-parent) ends up at the far right, grey, without explanation.
+    const ordered = ancestors.slice().reverse(); // [parent, ..., root]
+    const pills = [];
+    for (let i = 0; i < ordered.length; i++) {
+      const pill = makePill(ordered[i].name, i === 0 ? "ancestor group-start" : "ancestor", ordered[i]);
+      pills.push(pill);
+    }
+    pills.forEach(p => ancestorRow.appendChild(p));
+  }
+
+  // Lecture panel
+  const contrastTitle = node.contrast && node.contrast.length
+    ? `<div class="contrast-title">对比概念 · 橙色文本框</div><div class="contrast-list">${node.contrast.map(c => `<span class="contrast-box">${escapeHtml(c)}</span>`).join("")}</div>`
+    : "";
+  lecture.innerHTML = `
+    <h2>${escapeHtml(node.name)}</h2>
+    ${node.summary ? `<div class="summary">${escapeHtml(node.summary)}</div>` : ""}
+    <div class="sentences">
+      ${(node.explanation || []).map(s => `<div class="sentence">${escapeHtml(s)}</div>`).join("")}
+    </div>
+    ${contrastTitle}
+    ${renderBlocksHTML(node.blocks)}
+  `;
+  // Restart CSS animation by toggling a class.
+  lecture.classList.remove("fade-swap");
+  void lecture.offsetWidth;
+  lecture.classList.add("fade-swap");
+
+  // Lower: child nodes, grey, no extra explanation
+  childrenRow.innerHTML = "";
+  if (node.children.length === 0) {
+    childrenRow.innerHTML = `<div class="empty">已到底层：该节点是数学/物理原语，不再继续展开。${node.is_primitive && node.primitive_kind ? `（${node.primitive_kind === "math" ? "数学抽象" : "物理实体"}）` : ""}</div>`;
+  } else {
+    for (const child of node.children) {
+      const box = document.createElement("div");
+      box.className = "child-box " + (child.is_primitive ? "entity" : "abstract");
+      box.innerHTML = `${escapeHtml(child.name)}<span class="type-tag">${child.is_primitive ? (child.primitive_kind === "math" ? "数学原语" : "物理实体") : "待展开概念"}</span>`;
+      box.dataset.nodeId = child.id;
+      box.addEventListener("click", () => goToId(child.id));
+      childrenRow.appendChild(box);
+    }
+  }
+
+  // Relation diagram
+  renderDiagram(node);
+
+  // Progress
+  progressText.textContent = `${currentIndex + 1} / ${order.length}`;
+  progressBar.style.width = ((currentIndex + 1) / order.length * 100).toFixed(1) + "%";
+}
+
+/* ---------- SVG relation diagram ---------- */
+
+function renderDiagram(node) {
+  diagram.innerHTML = "";
+  const W = 1600, H = 800;
+  const svg = diagram;
+  const children = node.children;
+
+  const byName = new Map();
+  const items = [];
+  const info = new Map();
+  info.set(node.name, { id: node.id, entity: node.is_primitive, external: false });
+  for (const child of children) {
+    info.set(child.name, { id: child.id, entity: child.is_primitive, external: false });
+  }
+
+  function addItem(name, rect) {
+    const meta = info.get(name) || { id: null, entity: false, external: true };
+    byName.set(name, { rect, id: meta.id, entity: meta.entity });
+    items.push({ name, id: meta.id, rect, entity: meta.entity, external: meta.external });
+  }
+
+  // ---------- Main area: current node + all direct child nodes ----------
+  const currentRect = { x: 40, y: 250, w: 300, h: 300 };
+  addItem(node.name, currentRect);
+
+  const gridCols = 3;
+  const slotW = 260;
+  const slotH = 140;
+  const gapX = 25;
+  const gapY = 30;
+  const gridX = 380;
+  const gridY = 30;
+
+  children.forEach((child, i) => {
+    const col = i % gridCols;
+    const row = Math.floor(i / gridCols);
+    addItem(child.name, {
+      x: gridX + col * (slotW + gapX),
+      y: gridY + row * (slotH + gapY),
+      w: slotW - 20,
+      h: 110
+    });
+  });
+
+  // ---------- Spatial relation panel (right side) ----------
+  const spatialContainerKinds = new Set([
+    "located_in", "inside", "contained_in", "occurs_in", "enters", "generated_in", "within", "in"
+  ]);
+  const containerOf = new Map();
+  const containedBy = new Map();
+  const spatialNames = new Set();
+
+  for (const rel of (node.spatial_relations || [])) {
+    spatialNames.add(rel.subject);
+    spatialNames.add(rel.object);
+    if (spatialContainerKinds.has(rel.relation) && rel.subject !== rel.object) {
+      containedBy.set(rel.subject, rel.object);
+      if (!containerOf.has(rel.object)) containerOf.set(rel.object, []);
+      containerOf.get(rel.object).push(rel.subject);
+    }
+  }
+
+  const spatialInfo = new Map();
+  for (const name of spatialNames) {
+    spatialInfo.set(name, info.get(name) || { id: null, entity: false, external: true });
+  }
+
+  const placedSpatial = new Set();
+  const spatialItems = [];
+
+  function placeSpatial(name, x, y, w, h) {
+    if (placedSpatial.has(name)) return;
+    placedSpatial.add(name);
+    const meta = spatialInfo.get(name) || { id: null, entity: false, external: true };
+    spatialItems.push({ name, id: meta.id, rect: { x, y, w, h }, entity: meta.entity, external: meta.external });
+
+    const subs = containerOf.get(name) || [];
+    const bigSubs = subs.filter(s => containerOf.has(s));
+    const smallSubs = subs.filter(s => !containerOf.has(s));
+
+    let cursorY = y + 36;
+    let bigCount = 0;
+    const bigCols = Math.max(1, Math.floor((w - 20) / 170));
+    for (const sub of bigSubs) {
+      const bw = Math.min(170, Math.floor((w - 20 - (bigCols - 1) * 12) / bigCols));
+      const bh = 120;
+      const bx = x + 10 + (bigCount % bigCols) * (bw + 12);
+      const by = cursorY;
+      placeSpatial(sub, bx, by, bw, bh);
+      if ((bigCount + 1) % bigCols === 0) cursorY += bh + 12;
+      bigCount++;
+    }
+    if (bigSubs.length) cursorY += 10;
+
+    const smallCols = Math.max(1, Math.floor((w - 20) / 110));
+    const sw = Math.min(100, Math.floor((w - 20 - (smallCols - 1) * 10) / smallCols));
+    const sh = 48;
+    let smallIdx = 0;
+    for (const sub of smallSubs) {
+      if (placedSpatial.has(sub)) continue;
+      const col = smallIdx % smallCols;
+      const row = Math.floor(smallIdx / smallCols);
+      const sx = x + 10 + col * (sw + 10);
+      const sy = cursorY + row * (sh + 12);
+      placeSpatial(sub, sx, sy, sw, sh);
+      smallIdx++;
+    }
+  }
+
+  const panelX = 1180;
+  const panelY = 20;
+  const panelW = 400;
+  const panelH = 760;
+  const topContainers = [...containerOf.keys()].filter(name => !containedBy.has(name));
+  if (topContainers.length === 0) {
+    spatialItems.push({ name: "暂无空间关系", id: null, rect: { x: panelX + 10, y: panelY + 10, w: panelW - 20, h: 100 }, entity: false, external: true });
+  } else {
+    topContainers.forEach((name, i) => {
+      const col = i % 1;
+      const row = Math.floor(i / 1);
+      placeSpatial(name, panelX + 10, panelY + 10 + row * 400, panelW - 20, 380);
+    });
+  }
+
+  // ---------- SVG drawing ----------
+  function rectSvg(item, fill, stroke, strokeWidth, fontSize, textFill, dash) {
+    const rect = item.rect;
+    const dashAttr = dash ? ` stroke-dasharray="${dash}"` : "";
+    const idAttr = item.id ? ` data-node-id="${escapeHtml(item.id)}"` : "";
+    const cursorAttr = item.id ? ` style="cursor:pointer"` : "";
+    return `<rect x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${dashAttr}${idAttr}${cursorAttr}/>` +
+      `<text x="${rect.x + rect.w / 2}" y="${rect.y + rect.h / 2 + 7}" text-anchor="middle" font-size="${fontSize}" fill="${textFill}">${escapeHtml(item.name)}</text>`;
+  }
+
+  function drawItem(item, isCurrent) {
+    if (isCurrent) {
+      const dash = item.entity ? "" : "7 4";
+      return rectSvg(item, "#ffffff", "#ffffff", 3, 24, "#000000", dash);
+    }
+    if (item.external) {
+      return rectSvg(item, "#101010", "#888888", 1.6, 13, "#aaaaaa", "5 4");
+    }
+    if (item.entity) {
+      return rectSvg(item, "#1a1a1a", "#dddddd", 2, 16, "#ffffff", "");
+    }
+    return rectSvg(item, "#141414", "#888888", 1.8, 16, "#dddddd", "6 4");
+  }
+
+  let svgContent = "";
+  items.forEach((item, i) => {
+    svgContent += drawItem(item, i === 0);
+  });
+
+  // Spatial panel frame + title
+  svgContent += `<rect x="${panelX}" y="${panelY}" width="${panelW}" height="${panelH}" rx="16" fill="#050505" stroke="#333" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  svgContent += `<text x="${panelX + panelW / 2}" y="${panelY + 30}" text-anchor="middle" font-size="18" fill="#ff8c00" font-weight="bold">空间关系配图</text>`;
+  spatialItems.forEach(item => {
+    svgContent += drawItem(item, false);
+  });
+
+  // Temporal edges ONLY: one-directional arrows, no text labels.
+  let temporalSvg = "";
+  const seenTemporal = new Set();
+  for (const rel of (node.temporal_relations || [])) {
+    const a = byName.get(rel.before);
+    const b = byName.get(rel.after);
+    if (!a || !b) continue;
+    const key = rel.before + "|" + rel.after;
+    if (seenTemporal.has(key)) continue;
+    seenTemporal.add(key);
+    const p1 = { x: a.rect.x + a.rect.w / 2, y: a.rect.y - 10 };
+    const p2 = { x: b.rect.x + b.rect.w / 2, y: b.rect.y - 10 };
+    const midX = (p1.x + p2.x) / 2;
+    temporalSvg += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${p1.y - 60} ${p2.x} ${p2.y}" fill="none" stroke="#ff8c00" stroke-width="3.5" stroke-dasharray="9 5" marker-end="url(#arrowOrange)"/>`;
+  }
+
+  svg.innerHTML = `
+    <defs>
+      <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff8c00"/>
+      </marker>
+    </defs>
+    ${svgContent}${temporalSvg}
+  `;
+
+  svg.querySelectorAll("[data-node-id]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      goToId(el.dataset.nodeId);
+    });
+  });
+}
+
+/* ---------- navigation & animation ---------- */
+
+function getIndexById(id) {
+  for (let i = 0; i < order.length; i++) {
+    if (order[i].id === id) return i;
+  }
+  return -1;
+}
+
+function goToId(id) {
+  const idx = getIndexById(id);
+  if (idx < 0) return;
+  pause();
+  goTo(idx);
+  const targetHash = "#" + encodeURIComponent(id);
+  if (location.hash !== targetHash) {
+    try {
+      history.replaceState(null, "", targetHash);
+    } catch (err) {
+      location.hash = targetHash;
+    }
+  }
+}
+
+function goTo(index) {
+  currentIndex = (index + order.length) % order.length;
+  renderCurrent();
+}
+
+function next(step = 1) {
+  goTo(currentIndex + step);
+}
+
+function parseHash() {
+  const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  const idx = getIndexById(raw);
+  if (idx >= 0 && idx !== currentIndex) {
+    goTo(idx);
+  }
+}
+
+window.addEventListener("hashchange", parseHash);
+
+function play() {
+  if (playing) return;
+  playing = true;
+  playBtn.textContent = "⏸ 暂停";
+  playTimer = setInterval(() => {
+    if (currentIndex >= order.length - 1) {
+      goTo(0);
+    } else {
+      next(1);
+    }
+  }, 5000);
+}
+
+function pause() {
+  playing = false;
+  playBtn.textContent = "▶ 播放";
+  if (playTimer) {
+    clearInterval(playTimer);
+    playTimer = null;
+  }
+}
+
+function togglePlay() {
+  if (playing) pause(); else play();
+}
+
+prevBtn.addEventListener("click", () => { pause(); next(-1); });
+nextBtn.addEventListener("click", () => { pause(); next(1); });
+playBtn.addEventListener("click", togglePlay);
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") { pause(); next(-1); }
+  if (e.key === "ArrowRight") { pause(); next(1); }
+  if (e.key === " ") { e.preventDefault(); togglePlay(); }
+});
+
+/* ---------- init ---------- */
+if (location.hash) {
+  const idx = getIndexById(decodeURIComponent(location.hash.replace(/^#\/?/, "")));
+  if (idx >= 0) currentIndex = idx;
+}
+renderCurrent();
+</script>
+</body>
+</html>

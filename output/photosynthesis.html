@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>光合作用 · 概念动画讲解</title>
+<style>
+  :root {
+    --bg: #000000;
+    --fg: #ffffff;
+    --grey-border: #555555;
+    --grey-fill: #1a1a1a;
+    --grey-text: #999999;
+    --current-fill: #ffffff;
+    --current-text: #000000;
+    --orange-fill: #ff8c00;
+    --orange-text: #000000;
+    --temporal-edge: #ff8c00;
+    --font: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    overflow: hidden;
+  }
+
+  #app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 20px;
+    border-bottom: 1px solid #222;
+    background: #000;
+    z-index: 5;
+  }
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .controls button {
+    background: #111;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .controls button:hover {
+    background: #222;
+    border-color: #fff;
+  }
+  .controls .progress-text {
+    min-width: 70px;
+    text-align: center;
+    color: #aaa;
+  }
+  #progress {
+    flex: 1;
+    height: 4px;
+    background: #222;
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 120px;
+  }
+  #progress > div {
+    height: 100%;
+    width: 0%;
+    background: var(--orange-fill);
+    transition: width .3s ease;
+  }
+
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Upper area: 75% */
+  .upper {
+    height: 75%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 20px 6px 20px;
+    min-height: 0;
+    border-bottom: 1px solid #222;
+  }
+
+  .ancestor-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #222;
+    overflow-x: hidden;
+    min-height: 48px;
+  }
+  .ancestor-row .label {
+    font-size: 12px;
+    color: #777;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+
+  .node-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--grey-border);
+    background: var(--grey-fill);
+    color: var(--grey-text);
+    font-size: 14px;
+    white-space: nowrap;
+    transition: all .3s ease;
+  }
+  .node-pill.current {
+    background: var(--current-fill);
+    color: var(--current-text);
+    border-color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 0 24px rgba(255,255,255,.35);
+    animation: pulse 2s infinite;
+  }
+  .node-pill.ancestor {
+    opacity: .9;
+  }
+  .node-pill.ancestor.group-start {
+    margin-left: auto;
+  }
+  .node-pill.entity {
+    border-style: solid;
+  }
+  .node-pill.abstract {
+    border-style: dashed;
+  }
+  .node-pill.clickable {
+    cursor: pointer;
+  }
+  .node-pill.clickable:hover {
+    border-color: #ddd;
+    color: #fff;
+  }
+  .node-pill.hidden {
+    display: none;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(255,255,255,.18); }
+    50% { box-shadow: 0 0 34px rgba(255,255,255,.45); }
+  }
+
+  .main-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .lecture {
+    flex: 0 0 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  .lecture h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.3;
+    border-left: 4px solid var(--orange-fill);
+    padding-left: 10px;
+  }
+  .lecture .summary {
+    color: #ccc;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .lecture .sentences {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .lecture .sentence {
+    border-left: 2px solid #333;
+    padding-left: 10px;
+    color: #eee;
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: slideIn .5s ease forwards;
+  }
+  .sentence:nth-child(1) { animation-delay: .05s; }
+  .sentence:nth-child(2) { animation-delay: .25s; }
+  .sentence:nth-child(3) { animation-delay: .45s; }
+  .sentence:nth-child(4) { animation-delay: .65s; }
+  @keyframes slideIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .contrast-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .contrast-box {
+    background: var(--orange-fill);
+    color: var(--orange-text);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .contrast-title {
+    color: #aaa;
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+
+  .diagram-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #040404;
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #diagram {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  /* Lower area: 25% */
+  .lower {
+    height: 25%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 20px 12px 20px;
+    min-height: 0;
+    background: #020202;
+  }
+  .lower .lower-label {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 8px;
+  }
+  .children-row {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .child-box {
+    flex: 0 0 auto;
+    min-width: 100px;
+    max-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid var(--grey-border);
+    background: var(--grey-fill);
+    color: var(--grey-text);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .child-box.entity {
+    border-style: solid;
+  }
+  .child-box.abstract {
+    border-style: dashed;
+  }
+  .child-box:hover {
+    border-color: #ccc;
+    color: #fff;
+  }
+  .child-box .type-tag {
+    display: block;
+    font-size: 10px;
+    color: #777;
+    margin-top: 4px;
+  }
+  .empty {
+    color: #666;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  svg text {
+    font-family: var(--font);
+  }
+
+  .edge-label {
+    font-size: 11px;
+    fill: #fff;
+  }
+  .edge-label.temporal {
+    fill: var(--temporal-edge);
+  }
+  .external-node {
+    fill: #181818;
+    stroke: #777;
+    stroke-width: 1;
+  }
+
+  .fade-swap {
+    animation: fadeIn .45s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="root-title"></h1>
+    <div class="controls">
+      <button id="prevBtn" title="上一个节点">◀ 上一步</button>
+      <button id="playBtn" title="播放/暂停">▶ 播放</button>
+      <button id="nextBtn" title="下一个节点">下一步 ▶</button>
+      <span class="progress-text" id="progressText">0 / 0</span>
+      <div id="progress"><div id="progressBar"></div></div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="upper" id="upper">
+      <div class="ancestor-row" id="ancestorRow"></div>
+      <div class="main-content" id="mainContent">
+        <div class="lecture" id="lecture"></div>
+        <div class="diagram-wrap">
+          <svg id="diagram" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="lower" id="lower">
+      <div class="lower-label">子节点 · 仅作结构提示，灰色无额外说明</div>
+      <div class="children-row" id="childrenRow"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const TREE = {"id": "光合作用-root", "name": "光合作用", "summary": "光合作用利用光能，将水和二氧化碳转化为葡萄糖和氧气，发生在叶绿体中。", "explanation": ["光合作用将光能转化为化学能，原料是水和二氧化碳，产物是葡萄糖和氧气。", "它发生在植物细胞的叶绿体中，分为光反应和暗反应两个阶段。", "光反应在类囊体膜上进行，暗反应在叶绿体基质中进行，两阶段由 ATP 和 NADPH 连接。"], "is_primitive": false, "primitive_kind": null, "contrast": ["呼吸作用", "化能合成作用"], "set_relations": [{"subject": "光反应", "relation": "subset_of", "object": "光合作用", "note": "光反应是光合作用的一个阶段"}, {"subject": "暗反应", "relation": "subset_of", "object": "光合作用", "note": "暗反应是光合作用的一个阶段"}, {"subject": "光反应", "relation": "disjoint_from", "object": "暗反应", "note": "两个阶段在时空上可区分"}], "temporal_relations": [{"before": "光反应", "after": "暗反应", "kind": "before", "note": "光反应先于暗反应，为暗反应提供 ATP 和 NADPH"}], "spatial_relations": [{"subject": "光反应", "relation": "occurs_in", "object": "类囊体膜", "note": "光反应发生在类囊体膜上"}, {"subject": "暗反应", "relation": "occurs_in", "object": "叶绿体基质", "note": "暗反应发生在叶绿体基质中"}, {"subject": "叶绿素", "relation": "located_in", "object": "类囊体膜", "note": "叶绿素嵌在类囊体膜上"}, {"subject": "水", "relation": "located_in", "object": "类囊体腔", "note": "水在类囊体腔中被光解"}, {"subject": "葡萄糖", "relation": "located_in", "object": "叶绿体基质", "note": "葡萄糖在叶绿体基质中合成"}, {"subject": "类囊体膜", "relation": "located_in", "object": "叶绿体", "note": "类囊体膜位于叶绿体内部"}, {"subject": "叶绿体基质", "relation": "located_in", "object": "叶绿体", "note": "叶绿体基质填充叶绿体内部"}, {"subject": "类囊体腔", "relation": "located_in", "object": "叶绿体", "note": "类囊体腔位于叶绿体内"}], "children": [{"id": "叶绿体-leaf", "name": "叶绿体", "summary": "植物细胞中含叶绿素的细胞器，是光合作用发生的场所。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光能-leaf", "name": "光能", "summary": "太阳辐射提供的能量，驱动水的光解和 ATP 合成。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "水-leaf", "name": "水", "summary": "光反应的原料，在类囊体膜上被光解产生氧气。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "二氧化碳-leaf", "name": "二氧化碳", "summary": "暗反应的原料，被固定后进入卡尔文循环。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "氧气-leaf", "name": "氧气", "summary": "光反应中水光解的副产物，释放到大气中。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "葡萄糖-leaf", "name": "葡萄糖", "summary": "暗反应最终合成的有机物，储存化学能。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光反应-node", "name": "光反应", "summary": "在类囊体膜上利用光能分解水，产生氧气、ATP 和 NADPH。", "explanation": ["光反应发生在类囊体膜上，叶绿素吸收光能。", "水被光解产生氧气，同时生成 ATP 和 NADPH。"], "is_primitive": false, "primitive_kind": null, "contrast": ["暗反应"], "set_relations": [{"subject": "叶绿素", "relation": "element_of", "object": "类囊体膜", "note": "叶绿素位于类囊体膜上"}, {"subject": "光能", "relation": "element_of", "object": "电磁辐射", "note": "光能属于电磁辐射"}, {"subject": "水", "relation": "element_of", "object": "光反应原料集合", "note": "水是光反应原料"}], "temporal_relations": [{"before": "光能", "after": "水", "kind": "before", "note": "先吸收光能再光解水"}], "spatial_relations": [{"subject": "光反应", "relation": "occurs_in", "object": "类囊体膜", "note": "光反应的场所是类囊体膜"}, {"subject": "叶绿素", "relation": "located_in", "object": "类囊体膜", "note": "叶绿素嵌在类囊体膜上"}, {"subject": "水", "relation": "located_in", "object": "类囊体腔", "note": "水在类囊体腔中被光解"}, {"subject": "氧气", "relation": "generated_in", "object": "类囊体腔", "note": "水光解释放的氧气进入类囊体腔/细胞"}], "children": [{"id": "类囊体膜-leaf", "name": "类囊体膜", "summary": "叶绿体内进行光反应的膜结构，含有叶绿素和电子传递链。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "叶绿素-leaf", "name": "叶绿素", "summary": "吸收光能的光合色素，主要吸收红光和蓝紫光。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "光能-light-leaf", "name": "光能", "summary": "驱动光反应的电磁辐射能。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "水-light-leaf", "name": "水", "summary": "光反应中被光解的原料。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "氧气-light-leaf", "name": "氧气", "summary": "水光解释放的气体产物。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "ATP-light-leaf", "name": "ATP", "summary": "光反应合成的能量货币，供暗反应使用。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "NADPH-light-leaf", "name": "NADPH", "summary": "光反应合成的还原剂，供暗反应还原 C3。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "类囊体腔-leaf", "name": "类囊体腔", "summary": "类囊体膜围成的腔，水在这里被光解。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}, {"id": "暗反应-node", "name": "暗反应", "summary": "在叶绿体基质中利用二氧化碳和 ATP/NADPH，通过卡尔文循环合成葡萄糖。", "explanation": ["暗反应在叶绿体基质中进行，二氧化碳被固定为 C3。", "C3 被 ATP 和 NADPH 还原，最终生成葡萄糖并再生 RuBP。"], "is_primitive": false, "primitive_kind": null, "contrast": ["光反应"], "set_relations": [{"subject": "二氧化碳", "relation": "element_of", "object": "暗反应原料集合", "note": "二氧化碳是暗反应原料"}, {"subject": "葡萄糖", "relation": "element_of", "object": "暗反应产物集合", "note": "葡萄糖是暗反应产物"}], "temporal_relations": [{"before": "二氧化碳", "after": "葡萄糖", "kind": "before", "note": "二氧化碳先被固定，最终生成葡萄糖"}], "spatial_relations": [{"subject": "暗反应", "relation": "occurs_in", "object": "叶绿体基质", "note": "暗反应的场所是叶绿体基质"}, {"subject": "二氧化碳", "relation": "enters", "object": "叶绿体基质", "note": "二氧化碳进入叶绿体基质参与固定"}, {"subject": "C3", "relation": "located_in", "object": "叶绿体基质", "note": "C3 在叶绿体基质中生成"}, {"subject": "葡萄糖", "relation": "located_in", "object": "叶绿体基质", "note": "葡萄糖在叶绿体基质中合成"}, {"subject": "RuBP", "relation": "located_in", "object": "叶绿体基质", "note": "RuBP 在叶绿体基质中参与卡尔文循环"}], "children": [{"id": "叶绿体基质-leaf", "name": "叶绿体基质", "summary": "叶绿体内进行暗反应的半流体基质。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "二氧化碳-dark-leaf", "name": "二氧化碳", "summary": "暗反应中被固定的无机碳源。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "C3-dark-leaf", "name": "C3", "summary": "二氧化碳固定后产生的三碳化合物。", "explanation": [], "is_primitive": true, "primitive_kind": "math", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "RuBP-dark-leaf", "name": "RuBP", "summary": "卡尔文循环中再生并固定二氧化碳的五碳化合物。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}, {"id": "葡萄糖-dark-leaf", "name": "葡萄糖", "summary": "暗反应最终合成的六碳糖。", "explanation": [], "is_primitive": true, "primitive_kind": "physical", "contrast": [], "set_relations": [], "temporal_relations": [], "spatial_relations": [], "children": []}]}]};
+
+const rootTitle = document.getElementById("root-title");
+const ancestorRow = document.getElementById("ancestorRow");
+const lecture = document.getElementById("lecture");
+const childrenRow = document.getElementById("childrenRow");
+const diagram = document.getElementById("diagram");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const playBtn = document.getElementById("playBtn");
+const progressText = document.getElementById("progressText");
+const progressBar = document.getElementById("progressBar");
+const upper = document.getElementById("upper");
+const lower = document.getElementById("lower");
+
+/* ---------- helpers ---------- */
+
+function getNodesInOrder(node) {
+  const out = [];
+  const stack = [{ n: node, depth: 0 }];
+  while (stack.length) {
+    const { n, depth } = stack.pop();
+    out.push({ id: n.id, depth });
+    for (let i = n.children.length - 1; i >= 0; i--) {
+      stack.push({ n: n.children[i], depth: depth + 1 });
+    }
+  }
+  return out;
+}
+
+const nodeById = new Map();
+const order = getNodesInOrder(TREE);
+order.forEach(item => {
+  const n = findById(TREE, item.id);
+  nodeById.set(item.id, n);
+});
+
+function findById(node, id) {
+  if (node.id === id) return node;
+  for (const child of node.children) {
+    const hit = findById(child, id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function getAncestors(root, nodeId) {
+  const path = [];
+  function visit(n, trail) {
+    if (n.id === nodeId) return trail;
+    for (const c of n.children) {
+      const hit = visit(c, trail.concat(n));
+      if (hit) return hit;
+    }
+    return null;
+  }
+  return visit(root, []) || [];
+}
+
+function makePill(text, className, node) {
+  const div = document.createElement("div");
+  const entity = node && node.is_primitive;
+  div.className = "node-pill " + className + (entity ? " entity" : " abstract") + " clickable";
+  div.textContent = text;
+  if (node) {
+    div.dataset.nodeId = node.id;
+    div.addEventListener("click", () => goToId(node.id));
+  }
+  return div;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = String(text ?? "");
+  return div.innerHTML;
+}
+
+/* ---------- state ---------- */
+
+let currentIndex = 0;
+let playing = false;
+let playTimer = null;
+
+function currentNode() {
+  return nodeById.get(order[currentIndex].id);
+}
+
+function renderCurrent() {
+  const node = currentNode();
+  if (!node) return;
+
+  // Root title
+  rootTitle.textContent = TREE.name + " · 概念动画讲解";
+
+  // Upper: current + ancestors (nearest parent first, root/grandparent at far right)
+  ancestorRow.innerHTML = "";
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = "当前讲解:";
+  ancestorRow.appendChild(label);
+
+  const ancestors = getAncestors(TREE, node.id);
+  ancestorRow.appendChild(makePill(node.name, "current", node));
+
+  if (ancestors.length) {
+    const sep = document.createElement("span");
+    sep.textContent = "←";
+    sep.style.color = "#555";
+    ancestorRow.appendChild(sep);
+    // Display ancestors from nearest parent to root. The root (for deeper nodes:
+    // the parent-of-parent) ends up at the far right, grey, without explanation.
+    const ordered = ancestors.slice().reverse(); // [parent, ..., root]
+    const pills = [];
+    for (let i = 0; i < ordered.length; i++) {
+      const pill = makePill(ordered[i].name, i === 0 ? "ancestor group-start" : "ancestor", ordered[i]);
+      pills.push(pill);
+    }
+    pills.forEach(p => ancestorRow.appendChild(p));
+  }
+
+  // Lecture panel
+  const contrastTitle = node.contrast && node.contrast.length
+    ? `<div class="contrast-title">对比概念 · 橙色文本框</div><div class="contrast-list">${node.contrast.map(c => `<span class="contrast-box">${escapeHtml(c)}</span>`).join("")}</div>`
+    : "";
+  lecture.innerHTML = `
+    <h2>${escapeHtml(node.name)}</h2>
+    ${node.summary ? `<div class="summary">${escapeHtml(node.summary)}</div>` : ""}
+    <div class="sentences">
+      ${(node.explanation || []).map(s => `<div class="sentence">${escapeHtml(s)}</div>`).join("")}
+    </div>
+    ${contrastTitle}
+  `;
+  // Restart CSS animation by toggling a class.
+  lecture.classList.remove("fade-swap");
+  void lecture.offsetWidth;
+  lecture.classList.add("fade-swap");
+
+  // Lower: child nodes, grey, no extra explanation
+  childrenRow.innerHTML = "";
+  if (node.children.length === 0) {
+    childrenRow.innerHTML = `<div class="empty">已到底层：该节点是数学/物理原语，不再继续展开。${node.is_primitive && node.primitive_kind ? `（${node.primitive_kind === "math" ? "数学抽象" : "物理实体"}）` : ""}</div>`;
+  } else {
+    for (const child of node.children) {
+      const box = document.createElement("div");
+      box.className = "child-box " + (child.is_primitive ? "entity" : "abstract");
+      box.innerHTML = `${escapeHtml(child.name)}<span class="type-tag">${child.is_primitive ? (child.primitive_kind === "math" ? "数学原语" : "物理实体") : "待展开概念"}</span>`;
+      box.dataset.nodeId = child.id;
+      box.addEventListener("click", () => goToId(child.id));
+      childrenRow.appendChild(box);
+    }
+  }
+
+  // Relation diagram
+  renderDiagram(node);
+
+  // Progress
+  progressText.textContent = `${currentIndex + 1} / ${order.length}`;
+  progressBar.style.width = ((currentIndex + 1) / order.length * 100).toFixed(1) + "%";
+}
+
+/* ---------- SVG relation diagram ---------- */
+
+function renderDiagram(node) {
+  diagram.innerHTML = "";
+  const W = 1600, H = 800;
+  const svg = diagram;
+  const children = node.children;
+
+  const byName = new Map();
+  const items = [];
+  const info = new Map();
+  info.set(node.name, { id: node.id, entity: node.is_primitive, external: false });
+  for (const child of children) {
+    info.set(child.name, { id: child.id, entity: child.is_primitive, external: false });
+  }
+
+  function addItem(name, rect) {
+    const meta = info.get(name) || { id: null, entity: false, external: true };
+    byName.set(name, { rect, id: meta.id, entity: meta.entity });
+    items.push({ name, id: meta.id, rect, entity: meta.entity, external: meta.external });
+  }
+
+  // ---------- Main area: current node + all direct child nodes ----------
+  const currentRect = { x: 40, y: 250, w: 300, h: 300 };
+  addItem(node.name, currentRect);
+
+  const gridCols = 3;
+  const slotW = 260;
+  const slotH = 140;
+  const gapX = 25;
+  const gapY = 30;
+  const gridX = 380;
+  const gridY = 30;
+
+  children.forEach((child, i) => {
+    const col = i % gridCols;
+    const row = Math.floor(i / gridCols);
+    addItem(child.name, {
+      x: gridX + col * (slotW + gapX),
+      y: gridY + row * (slotH + gapY),
+      w: slotW - 20,
+      h: 110
+    });
+  });
+
+  // ---------- Spatial relation panel (right side) ----------
+  const spatialContainerKinds = new Set([
+    "located_in", "inside", "contained_in", "occurs_in", "enters", "generated_in", "within", "in"
+  ]);
+  const containerOf = new Map();
+  const containedBy = new Map();
+  const spatialNames = new Set();
+
+  for (const rel of (node.spatial_relations || [])) {
+    spatialNames.add(rel.subject);
+    spatialNames.add(rel.object);
+    if (spatialContainerKinds.has(rel.relation) && rel.subject !== rel.object) {
+      containedBy.set(rel.subject, rel.object);
+      if (!containerOf.has(rel.object)) containerOf.set(rel.object, []);
+      containerOf.get(rel.object).push(rel.subject);
+    }
+  }
+
+  const spatialInfo = new Map();
+  for (const name of spatialNames) {
+    spatialInfo.set(name, info.get(name) || { id: null, entity: false, external: true });
+  }
+
+  const placedSpatial = new Set();
+  const spatialItems = [];
+
+  function placeSpatial(name, x, y, w, h) {
+    if (placedSpatial.has(name)) return;
+    placedSpatial.add(name);
+    const meta = spatialInfo.get(name) || { id: null, entity: false, external: true };
+    spatialItems.push({ name, id: meta.id, rect: { x, y, w, h }, entity: meta.entity, external: meta.external });
+
+    const subs = containerOf.get(name) || [];
+    const bigSubs = subs.filter(s => containerOf.has(s));
+    const smallSubs = subs.filter(s => !containerOf.has(s));
+
+    let cursorY = y + 36;
+    let bigCount = 0;
+    const bigCols = Math.max(1, Math.floor((w - 20) / 170));
+    for (const sub of bigSubs) {
+      const bw = Math.min(170, Math.floor((w - 20 - (bigCols - 1) * 12) / bigCols));
+      const bh = 120;
+      const bx = x + 10 + (bigCount % bigCols) * (bw + 12);
+      const by = cursorY;
+      placeSpatial(sub, bx, by, bw, bh);
+      if ((bigCount + 1) % bigCols === 0) cursorY += bh + 12;
+      bigCount++;
+    }
+    if (bigSubs.length) cursorY += 10;
+
+    const smallCols = Math.max(1, Math.floor((w - 20) / 110));
+    const sw = Math.min(100, Math.floor((w - 20 - (smallCols - 1) * 10) / smallCols));
+    const sh = 48;
+    let smallIdx = 0;
+    for (const sub of smallSubs) {
+      if (placedSpatial.has(sub)) continue;
+      const col = smallIdx % smallCols;
+      const row = Math.floor(smallIdx / smallCols);
+      const sx = x + 10 + col * (sw + 10);
+      const sy = cursorY + row * (sh + 12);
+      placeSpatial(sub, sx, sy, sw, sh);
+      smallIdx++;
+    }
+  }
+
+  const panelX = 1180;
+  const panelY = 20;
+  const panelW = 400;
+  const panelH = 760;
+  const topContainers = [...containerOf.keys()].filter(name => !containedBy.has(name));
+  if (topContainers.length === 0) {
+    spatialItems.push({ name: "暂无空间关系", id: null, rect: { x: panelX + 10, y: panelY + 10, w: panelW - 20, h: 100 }, entity: false, external: true });
+  } else {
+    topContainers.forEach((name, i) => {
+      const col = i % 1;
+      const row = Math.floor(i / 1);
+      placeSpatial(name, panelX + 10, panelY + 10 + row * 400, panelW - 20, 380);
+    });
+  }
+
+  // ---------- SVG drawing ----------
+  function rectSvg(item, fill, stroke, strokeWidth, fontSize, textFill, dash) {
+    const rect = item.rect;
+    const dashAttr = dash ? ` stroke-dasharray="${dash}"` : "";
+    const idAttr = item.id ? ` data-node-id="${escapeHtml(item.id)}"` : "";
+    const cursorAttr = item.id ? ` style="cursor:pointer"` : "";
+    return `<rect x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${dashAttr}${idAttr}${cursorAttr}/>` +
+      `<text x="${rect.x + rect.w / 2}" y="${rect.y + rect.h / 2 + 7}" text-anchor="middle" font-size="${fontSize}" fill="${textFill}">${escapeHtml(item.name)}</text>`;
+  }
+
+  function drawItem(item, isCurrent) {
+    if (isCurrent) {
+      const dash = item.entity ? "" : "7 4";
+      return rectSvg(item, "#ffffff", "#ffffff", 3, 24, "#000000", dash);
+    }
+    if (item.external) {
+      return rectSvg(item, "#101010", "#888888", 1.6, 13, "#aaaaaa", "5 4");
+    }
+    if (item.entity) {
+      return rectSvg(item, "#1a1a1a", "#dddddd", 2, 16, "#ffffff", "");
+    }
+    return rectSvg(item, "#141414", "#888888", 1.8, 16, "#dddddd", "6 4");
+  }
+
+  let svgContent = "";
+  items.forEach((item, i) => {
+    svgContent += drawItem(item, i === 0);
+  });
+
+  // Spatial panel frame + title
+  svgContent += `<rect x="${panelX}" y="${panelY}" width="${panelW}" height="${panelH}" rx="16" fill="#050505" stroke="#333" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  svgContent += `<text x="${panelX + panelW / 2}" y="${panelY + 30}" text-anchor="middle" font-size="18" fill="#ff8c00" font-weight="bold">空间关系配图</text>`;
+  spatialItems.forEach(item => {
+    svgContent += drawItem(item, false);
+  });
+
+  // Temporal edges ONLY: one-directional arrows, no text labels.
+  let temporalSvg = "";
+  const seenTemporal = new Set();
+  for (const rel of (node.temporal_relations || [])) {
+    const a = byName.get(rel.before);
+    const b = byName.get(rel.after);
+    if (!a || !b) continue;
+    const key = rel.before + "|" + rel.after;
+    if (seenTemporal.has(key)) continue;
+    seenTemporal.add(key);
+    const p1 = { x: a.rect.x + a.rect.w / 2, y: a.rect.y - 10 };
+    const p2 = { x: b.rect.x + b.rect.w / 2, y: b.rect.y - 10 };
+    const midX = (p1.x + p2.x) / 2;
+    temporalSvg += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${p1.y - 60} ${p2.x} ${p2.y}" fill="none" stroke="#ff8c00" stroke-width="3.5" stroke-dasharray="9 5" marker-end="url(#arrowOrange)"/>`;
+  }
+
+  svg.innerHTML = `
+    <defs>
+      <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff8c00"/>
+      </marker>
+    </defs>
+    ${svgContent}${temporalSvg}
+  `;
+
+  svg.querySelectorAll("[data-node-id]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      goToId(el.dataset.nodeId);
+    });
+  });
+}
+
+/* ---------- navigation & animation ---------- */
+
+function getIndexById(id) {
+  for (let i = 0; i < order.length; i++) {
+    if (order[i].id === id) return i;
+  }
+  return -1;
+}
+
+function goToId(id) {
+  const idx = getIndexById(id);
+  if (idx < 0) return;
+  pause();
+  goTo(idx);
+  const targetHash = "#" + encodeURIComponent(id);
+  if (location.hash !== targetHash) {
+    try {
+      history.replaceState(null, "", targetHash);
+    } catch (err) {
+      location.hash = targetHash;
+    }
+  }
+}
+
+function goTo(index) {
+  currentIndex = (index + order.length) % order.length;
+  renderCurrent();
+}
+
+function next(step = 1) {
+  goTo(currentIndex + step);
+}
+
+function parseHash() {
+  const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  const idx = getIndexById(raw);
+  if (idx >= 0 && idx !== currentIndex) {
+    goTo(idx);
+  }
+}
+
+window.addEventListener("hashchange", parseHash);
+
+function play() {
+  if (playing) return;
+  playing = true;
+  playBtn.textContent = "⏸ 暂停";
+  playTimer = setInterval(() => {
+    if (currentIndex >= order.length - 1) {
+      goTo(0);
+    } else {
+      next(1);
+    }
+  }, 5000);
+}
+
+function pause() {
+  playing = false;
+  playBtn.textContent = "▶ 播放";
+  if (playTimer) {
+    clearInterval(playTimer);
+    playTimer = null;
+  }
+}
+
+function togglePlay() {
+  if (playing) pause(); else play();
+}
+
+prevBtn.addEventListener("click", () => { pause(); next(-1); });
+nextBtn.addEventListener("click", () => { pause(); next(1); });
+playBtn.addEventListener("click", togglePlay);
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") { pause(); next(-1); }
+  if (e.key === "ArrowRight") { pause(); next(1); }
+  if (e.key === " ") { e.preventDefault(); togglePlay(); }
+});
+
+/* ---------- init ---------- */
+if (location.hash) {
+  const idx = getIndexById(decodeURIComponent(location.hash.replace(/^#\/?/, "")));
+  if (idx >= 0) currentIndex = idx;
+}
+renderCurrent();
+</script>
+</body>
+</html>

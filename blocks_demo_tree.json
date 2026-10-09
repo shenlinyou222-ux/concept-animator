@@ -1,0 +1,248 @@
+{
+  "id": "blocks-demo-root",
+  "name": "梯度下降",
+  "summary": "沿损失函数下降最快的方向逐步更新参数的优化算法。",
+  "explanation": [
+    "梯度下降是迭代优化算法：每一步沿着使损失减小最快的方向移动一小步。",
+    "方向由损失函数对参数的梯度（导数）给出，步长由学习率控制。",
+    "重复足够多步后，参数收敛到损失较小的位置。"
+  ],
+  "contrast": [
+    "随机梯度下降",
+    "牛顿法"
+  ],
+  "blocks": [
+    {
+      "type": "formula",
+      "text": "θ ← θ − η · ∇L(θ)",
+      "caption": "参数更新公式：η 是学习率"
+    },
+    {
+      "type": "analogy",
+      "text": "像蒙眼下山：脚能感觉哪边更陡（梯度），每次朝下坡方向迈一小步（学习率），直到走到谷底（极小值）。"
+    },
+    {
+      "type": "steps",
+      "items": [
+        "计算当前参数下的损失 L(θ)",
+        "求梯度 ∇L(θ)",
+        "沿负梯度方向更新 θ ← θ − η·∇L(θ)",
+        "检查收敛，未收敛则回到第 1 步"
+      ]
+    },
+    {
+      "type": "chart",
+      "chart": "line",
+      "title": "典型损失曲线（随迭代下降）",
+      "unit": "",
+      "data": [
+        {
+          "label": "0",
+          "value": 2.4
+        },
+        {
+          "label": "20",
+          "value": 1.55
+        },
+        {
+          "label": "40",
+          "value": 0.95
+        },
+        {
+          "label": "60",
+          "value": 0.55
+        },
+        {
+          "label": "80",
+          "value": 0.32
+        },
+        {
+          "label": "100",
+          "value": 0.21
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "columns": [
+        "",
+        "梯度下降 GD",
+        "随机梯度下降 SGD"
+      ],
+      "rows": [
+        [
+          "每步用多少数据",
+          "全部训练集",
+          "单个/小批样本"
+        ],
+        [
+          "单步开销",
+          "大",
+          "小"
+        ],
+        [
+          "更新路径",
+          "平滑",
+          "抖动但能跳出小坑"
+        ]
+      ]
+    },
+    {
+      "type": "example",
+      "title": "一维例子",
+      "text": "若 L(θ) = (θ−3)²，则 ∇L = 2(θ−3)。从 θ=0、η=0.1 出发：0 → 0.6 → 1.08 → 1.46 … 逐步逼近 3。"
+    },
+    {
+      "type": "callout",
+      "text": "学习率过大 → 来回震荡甚至发散；过小 → 收敛极慢。",
+      "tone": "warn"
+    },
+    {
+      "type": "quote",
+      "text": "梯度下降是迭代优化算法：每一步沿着使损失减小最快的方向移动一小步。",
+      "source": "讲解示例文档"
+    },
+    {
+      "type": "quiz",
+      "question": "为什么要沿『负』梯度方向更新参数？",
+      "hint": "想想下山时朝哪个方向走",
+      "answer": "梯度指向函数上升最快的方向；要减小损失，就要朝相反方向移动。"
+    }
+  ],
+  "is_primitive": false,
+  "primitive_kind": null,
+  "set_relations": [
+    {
+      "subject": "梯度下降",
+      "relation": "superset_of",
+      "object": "学习率",
+      "note": ""
+    },
+    {
+      "subject": "梯度下降",
+      "relation": "superset_of",
+      "object": "梯度",
+      "note": ""
+    },
+    {
+      "subject": "梯度下降",
+      "relation": "superset_of",
+      "object": "损失函数",
+      "note": ""
+    }
+  ],
+  "temporal_relations": [
+    {
+      "before": "求梯度",
+      "after": "更新参数",
+      "kind": "before",
+      "note": ""
+    }
+  ],
+  "spatial_relations": [],
+  "children": [
+    {
+      "id": "lr-leaf",
+      "name": "学习率",
+      "summary": "控制每步移动距离的正数。",
+      "explanation": [
+        "学习率是一个正的标量。"
+      ],
+      "is_primitive": true,
+      "primitive_kind": "math",
+      "contrast": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "blocks": [],
+      "children": []
+    },
+    {
+      "id": "grad-leaf",
+      "name": "梯度",
+      "summary": "多元函数偏导数组成的向量。",
+      "explanation": [
+        "梯度是各偏导数排成的向量。"
+      ],
+      "is_primitive": true,
+      "primitive_kind": "math",
+      "contrast": [],
+      "set_relations": [],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "blocks": [
+        {
+          "type": "formula",
+          "text": "∇L = (∂L/∂θ₁, ∂L/∂θ₂, …)",
+          "caption": "梯度向量"
+        }
+      ],
+      "children": []
+    },
+    {
+      "id": "loss-node",
+      "name": "损失函数",
+      "summary": "度量预测与真实值差距的函数。",
+      "explanation": [
+        "损失函数把预测误差汇总成一个数。"
+      ],
+      "is_primitive": false,
+      "primitive_kind": null,
+      "contrast": [
+        "评估指标"
+      ],
+      "set_relations": [
+        {
+          "subject": "均方误差",
+          "relation": "subset_of",
+          "object": "损失函数",
+          "note": ""
+        }
+      ],
+      "temporal_relations": [],
+      "spatial_relations": [],
+      "blocks": [
+        {
+          "type": "formula",
+          "text": "MSE = (1/n) Σ (yᵢ − ŷᵢ)²",
+          "caption": "均方误差"
+        },
+        {
+          "type": "chart",
+          "chart": "bar",
+          "title": "不同损失的量级对比",
+          "data": [
+            {
+              "label": "MSE",
+              "value": 2.4
+            },
+            {
+              "label": "MAE",
+              "value": 1.3
+            },
+            {
+              "label": "Huber",
+              "value": 1.7
+            }
+          ]
+        }
+      ],
+      "children": [
+        {
+          "id": "mse-leaf",
+          "name": "均方误差",
+          "summary": "误差平方的平均值。",
+          "explanation": [],
+          "is_primitive": true,
+          "primitive_kind": "math",
+          "contrast": [],
+          "set_relations": [],
+          "temporal_relations": [],
+          "spatial_relations": [],
+          "blocks": [],
+          "children": []
+        }
+      ]
+    }
+  ]
+}
