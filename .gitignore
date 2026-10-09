@@ -26,3 +26,8 @@ Thumbs.db
 # 一份写死了本机绝对路径的 partial_movie_file_list.txt，
 # 只对本机当次渲染有效，重渲染会自动重建。成品是同级目录下的 <Scene>.mp4。
 media/videos/**/partial_movie_files/
+
+# MathTex 的 LaTeX 副产物：.log 里逐条记录了本机 TeX 发行版的安装路径
+# （含盘符与用户名），.aux 只是编译中间态。两者都不该入库。
+media/Tex/*.log
+media/Tex/*.aux
